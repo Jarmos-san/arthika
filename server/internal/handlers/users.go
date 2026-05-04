@@ -15,7 +15,13 @@ import (
 	"encoding/json"
 	"log/slog"
 	"net/http"
+	"strconv"
+	"time"
 
+	jwt "github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
+
+	"github.com/Jarmos-san/arthika/server/internal/dto"
 	"github.com/Jarmos-san/arthika/server/internal/services"
 )
 
@@ -199,38 +205,82 @@ func (u UserHandler) LoginUser(writer http.ResponseWriter, request *http.Request
 
 	if username == "" {
 		u.logger.Error("missing required field", slog.String("username", "username"))
-		// TODO: Use an appropriate JSON:API-compliant error object here
-		http.Error(
-			writer,
-			"missing required field: username",
-			http.StatusUnprocessableEntity,
-		)
-
+		errDoc := []dto.ErrorObject{
+			{
+				Status: "Validation Error",
+				Code:   strconv.Itoa(http.StatusUnprocessableEntity),
+				Title:  "Missing Required Field",
+				Detail: "Missing required field: 'username' cannot be empty",
+			},
+		}
+		resp := dto.NewErrorDocument(errDoc)
+		encodingErr := json.NewEncoder(writer).Encode(resp)
+		if encodingErr != nil {
+			u.logger.Error(
+				"server error",
+				slog.String("type", "failed to encode JSON data"),
+			)
+			http.Error(
+				writer,
+				"failed to encode to JSON",
+				http.StatusInternalServerError,
+			)
+		}
 		return
 	}
 
 	if password == "" {
 		u.logger.Error("missing required field", slog.String("password", "password"))
-		// TODO: Use an appropriate JSON:API-compliant error object here
-		http.Error(
-			writer,
-			"missing required field: password",
-			http.StatusUnprocessableEntity,
-		)
-
+		errDoc := []dto.ErrorObject{
+			{
+				Status: "Validation Error",
+				Code:   strconv.Itoa(http.StatusUnprocessableEntity),
+				Title:  "Missing Required Field",
+				Detail: "Missing required field: 'password' cannot be empty",
+			},
+		}
+		resp := dto.NewErrorDocument(errDoc)
+		encodingErr := json.NewEncoder(writer).Encode(resp)
+		if encodingErr != nil {
+			u.logger.Error(
+				"server error",
+				slog.String("type", "failed to encode JSON data"),
+			)
+			http.Error(
+				writer,
+				"failed to encode to JSON",
+				http.StatusInternalServerError,
+			)
+		}
 		return
 	}
+
+	key := []byte("super-secret-key")
+	t := jwt.New(jwt.SigningMethodHS512)
+	s, signingErr := t.SignedString(key)
+
+	if signingErr != nil {
+		msg := "failed to sign token"
+		u.logger.Error(msg, slog.String("error", signingErr.Error()))
+		http.Error(writer, msg, http.StatusInternalServerError)
+	}
+
+	resourceObject := dto.ResourceObject{
+		Type: "tokens",
+		ID:   uuid.NewString(),
+		Attributes: map[string]any{
+			"accessToken": s,
+			"tokenType":   "Bearer",
+			"expiresIn":   time.Hour.Seconds(), // 3600 seconds
+		},
+	}
+
+	resp := dto.NewSingleDocument(resourceObject)
 
 	writer.Header().Set("Content-Type", "appplication/vnd.api+json")
 	writer.WriteHeader(http.StatusOK)
 
-	resp := struct {
-		Username string `json:"message"`
-		Password string `json:"-"`
-	}{
-		Username: username,
-		Password: password,
-	}
+	u.logger.Info("new tokens generated", slog.String("username", username))
 
 	encodingErr := json.NewEncoder(writer).Encode(resp)
 	if encodingErr != nil {
