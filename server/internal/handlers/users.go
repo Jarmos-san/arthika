@@ -201,9 +201,11 @@ func (u UserHandler) CreateUser( //nolint:funlen
 
 // LoginUser ...
 func (u UserHandler) LoginUser(writer http.ResponseWriter, request *http.Request) {
-	username := request.FormValue("username")
-	password := request.FormValue("password")
+	// Read the form-data from the request
+	username := request.FormValue("username") // Read the username
+	password := request.FormValue("password") // Read the password
 
+	// Validate the username, or return an error response if invalid
 	if username == "" {
 		u.logger.Error("missing required field", slog.String("username", "username"))
 		errDoc := []dto.ErrorObject{
@@ -230,6 +232,7 @@ func (u UserHandler) LoginUser(writer http.ResponseWriter, request *http.Request
 		return
 	}
 
+	// Validate the password, or return an error response if invalid
 	if password == "" {
 		u.logger.Error("missing required field", slog.String("password", "password"))
 		errDoc := []dto.ErrorObject{
@@ -270,6 +273,8 @@ func (u UserHandler) LoginUser(writer http.ResponseWriter, request *http.Request
 		http.Error(writer, msg, http.StatusInternalServerError)
 	}
 
+	// Create a "Resource Object" (according to the JSON:API spec) to respond to the
+	// client request with the JWT
 	resourceObject := dto.ResourceObject{
 		Type: "tokens",
 		ID:   uuid.NewString(),
@@ -280,13 +285,17 @@ func (u UserHandler) LoginUser(writer http.ResponseWriter, request *http.Request
 		},
 	}
 
+	// Create a JSON:API compliant "document" to be serialised into a JSON response
 	resp := dto.NewSingleDocument(resourceObject)
 
+	// Set the HTTP headers for the response
 	writer.Header().Set("Content-Type", "appplication/vnd.api+json")
 	writer.WriteHeader(http.StatusOK)
 
+	// Create an appropriate log statement before serializing the response
 	u.logger.Info("new tokens generated", slog.String("username", username))
 
+	// Serialise the objects and write a JSON response for the client
 	encodingErr := json.NewEncoder(writer).Encode(resp)
 	if encodingErr != nil {
 		http.Error(writer, "failed to encode to JSON", http.StatusInternalServerError)
