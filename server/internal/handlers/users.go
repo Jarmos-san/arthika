@@ -13,6 +13,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"strconv"
@@ -199,78 +200,134 @@ func (u UserHandler) CreateUser( //nolint:funlen
 	)
 }
 
-// LoginUser ...
+// validationError creates a JSON:API compliant error object for a missing required
+// field validation failure.
+//
+// The returned dto.ErrorObject contains metadata describing the validation error
+// including the HTTP status code, a short title and a detailed human-readable message
+// indicating which field is missing.
+//
+// Parameters:
+//
+//	field - The name of the field that failed the validation check.
+//
+// Returns:
+//
+//	A dto.ErrorObject representing the validation failure.
+//
+// TODO: Move this function elsewhere perhaps into a different module
+func validationError(field string) dto.ErrorObject {
+	return dto.ErrorObject{
+		Status: "Validation Error",
+		Code:   strconv.Itoa(http.StatusUnprocessableEntity),
+		Title:  "Missing Required Field",
+		Detail: fmt.Sprintf("Missing required field: '%s' cannot be empty", field),
+	}
+}
+
+// createJWT generates and signs a new JSON Web Token (JWT) using the application's
+// configured secret key.
+//
+// The JWT is signed using the HS512 signing algorithm. The secret key used for signing
+// is loaded frfom the application configuration.
+//
+// Returns:
+//
+//	string - The signed JWT.
+//	error - An error if token signing fails.
+func createJWT() (string, error) {
+	// Load the app config, required for fetching the secret key for the JWT
+	config := config.LoadConfig()
+
+	// Setup the JWT generation process
+	key := []byte(config.TokenSecret)    // Use the secret token loaded from the configs
+	t := jwt.New(jwt.SigningMethodHS512) // Use HMAC-SHA256 algorithm for token signing
+
+	return t.SignedString(key) // Create a signed JWT (or throw an error)
+}
+
+// LoginUser authenticates a user login request and returns a JSON:API compliant
+// response containing a newly generated JWT access token.
+//
+// The handler performs the following operations:
+//
+// 1. Reads the username and password from the incoming request.
+// 2. Validates that all required fields are present.
+// 3. Returns validation errors if required fields are missing.
+// 4. Generates a signed JWT access token.
+// 5. Wraps the token in a JSON:API resource object.
+// 6. Serialises and returns the response to the client.
+//
+// Validation failures return HTTP 422 Unprocessable Entity responses. Successful
+// authentication returns HTTP 200 OK.
+//
+// Parameters:
+//
+//	writer - The HTTP response writer used to construct the response.
+//	request - The incoming HTTP request containing login credentials.
 func (u UserHandler) LoginUser(writer http.ResponseWriter, request *http.Request) {
 	// Read the form-data from the request
 	username := request.FormValue("username") // Read the username
 	password := request.FormValue("password") // Read the password
 
+	// Initialise a slice to store the validation errors which will be serialised as a
+	// single object
+	validationErrs := make([]dto.ErrorObject, 0)
+
 	// Validate the username, or return an error response if invalid
 	if username == "" {
-		u.logger.Error("missing required field", slog.String("username", "username"))
-		errDoc := []dto.ErrorObject{
-			{
-				Status: "Validation Error",
-				Code:   strconv.Itoa(http.StatusUnprocessableEntity),
-				Title:  "Missing Required Field",
-				Detail: "Missing required field: 'username' cannot be empty",
-			},
-		}
-		resp := dto.NewErrorDocument(errDoc)
-		encodingErr := json.NewEncoder(writer).Encode(resp)
-		if encodingErr != nil {
-			u.logger.Error(
-				"server error",
-				slog.String("type", "failed to encode JSON data"),
-			)
-			http.Error(
-				writer,
-				"failed to encode to JSON",
-				http.StatusInternalServerError,
-			)
-		}
-		return
+		u.logger.Error("missing required field", slog.String("field", "username"))
+		validationErrs = append(validationErrs, validationError("username"))
 	}
 
 	// Validate the password, or return an error response if invalid
 	if password == "" {
-		u.logger.Error("missing required field", slog.String("password", "password"))
-		errDoc := []dto.ErrorObject{
-			{
-				Status: "Validation Error",
-				Code:   strconv.Itoa(http.StatusUnprocessableEntity),
-				Title:  "Missing Required Field",
-				Detail: "Missing required field: 'password' cannot be empty",
-			},
-		}
-		resp := dto.NewErrorDocument(errDoc)
-		encodingErr := json.NewEncoder(writer).Encode(resp)
-		if encodingErr != nil {
+		u.logger.Error("missing required field", slog.String("field", "password"))
+		validationErrs = append(validationErrs, validationError("password"))
+	}
+
+	// Return a error response if the user credentials are invalid
+	if len(validationErrs) > 0 {
+		writer.Header().Set("Content-Type", "application/vnd.api+json")
+		writer.WriteHeader(http.StatusUnprocessableEntity)
+		resp := dto.NewErrorDocument(validationErrs)
+
+		if err := json.NewEncoder(writer).Encode(resp); err != nil {
 			u.logger.Error(
 				"server error",
 				slog.String("type", "failed to encode JSON data"),
 			)
+
 			http.Error(
 				writer,
 				"failed to encode to JSON",
 				http.StatusInternalServerError,
 			)
 		}
+
 		return
 	}
 
-	// Load the app config, required for fetching the secret key for the JWT
-	config := config.LoadConfig()
+	// Generate the JWT, or return an error response if it failed
+	token, tokenErr := createJWT()
+	if tokenErr != nil {
+		writer.Header().Set("Content-Type", "application/vnd.api+json")
+		writer.WriteHeader(http.StatusUnprocessableEntity)
+		resp := dto.NewErrorDocument(validationErrs)
+		if err := json.NewEncoder(writer).Encode(resp); err != nil {
+			u.logger.Error(
+				"server error",
+				slog.String("type", "failed to encode JSON data"),
+			)
 
-	key := []byte(config.TokenSecret)    // Use the secret token loaded from the configs
-	t := jwt.New(jwt.SigningMethodHS512) // Use HMAC-SHA256 algorithm for token signing
-	s, signingErr := t.SignedString(key) // Create a signed JWT (or throw an error)
+			http.Error(
+				writer,
+				"failed to encode to JSON",
+				http.StatusInternalServerError,
+			)
+		}
 
-	// Throw an error if the token failed to create
-	if signingErr != nil {
-		msg := "failed to sign token"
-		u.logger.Error(msg, slog.String("error", signingErr.Error()))
-		http.Error(writer, msg, http.StatusInternalServerError)
+		return
 	}
 
 	// Create a "Resource Object" (according to the JSON:API spec) to respond to the
@@ -279,7 +336,7 @@ func (u UserHandler) LoginUser(writer http.ResponseWriter, request *http.Request
 		Type: "tokens",
 		ID:   uuid.NewString(),
 		Attributes: map[string]any{
-			"accessToken": s,
+			"accessToken": token,
 			"tokenType":   "Bearer",
 			"expiresIn":   time.Hour.Seconds(), // 3600 seconds
 		},
