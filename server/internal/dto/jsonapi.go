@@ -12,6 +12,8 @@ import (
 	"errors"
 )
 
+const jsonAPIVersion = "1.0"
+
 // ResourceObject represents a resource object in a JSON:API document.
 //
 // A resource object MUST contain a "type" member and MAY contain an "id". Attributes
@@ -113,7 +115,7 @@ type ErrorObject struct {
 func NewErrorDocument(errs []ErrorObject) Document[any] {
 	return Document[any]{
 		JSONAPI: &JSONAPI{
-			Version: "1.0",
+			Version: jsonAPIVersion,
 			Meta:    nil,
 		},
 		Errors:   errs,
@@ -203,7 +205,7 @@ type Document[T any] struct {
 func NewSingleDocument(resource ResourceObject) Document[ResourceObject] {
 	return Document[ResourceObject]{
 		JSONAPI: &JSONAPI{
-			Version: "1.0",
+			Version: jsonAPIVersion,
 			Meta:    nil,
 		},
 		Data:     &resource,
@@ -235,7 +237,7 @@ func NewSingleDocument(resource ResourceObject) Document[ResourceObject] {
 func NewCollection(resource []ResourceObject) Document[[]ResourceObject] {
 	return Document[[]ResourceObject]{
 		JSONAPI: &JSONAPI{
-			Version: "1.0",
+			Version: jsonAPIVersion,
 			Meta:    nil,
 		},
 		Data:     &resource,
@@ -267,7 +269,7 @@ func NewNullDocument() Document[any] {
 
 	return Document[any]{
 		JSONAPI: &JSONAPI{
-			Version: "1.0",
+			Version: jsonAPIVersion,
 			Meta:    nil,
 		},
 		Data:     &value,
