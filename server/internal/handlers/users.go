@@ -12,6 +12,7 @@
 package handlers
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"log/slog"
@@ -246,6 +247,55 @@ func createJWT() (string, error) {
 	return t.SignedString(key) // Create a signed JWT (or throw an error)
 }
 
+// writeJSONResponse serialises the provided payload into a JSON document and writes it
+// to the HTTP response writer using the supplied status code.
+//
+// The helper centralises JSON response handling for HTTP handlers by:
+//
+// 1. Encoding the provided payload into JSON.
+// 2. Setting the appropriate JSON:API content type header.
+// 3. Writing the HTTP status code.
+// 4. Writing the serialised JSON response body.
+// 5. Logging any encoding or write failures.
+//
+// The response uses the JSON:API media type:
+//
+//	Content-Type: application/vnd.api+json
+//
+// If JSON encoding fails, the function logs the error and attempts to return an HTTP
+// 500 Internal Server Error response.
+//
+// Parameters:
+//
+//	writer - The HTTP response writer used to construct the response.
+//	payload - The response payload to serialise into JSON.
+//
+// statusCode - The HTTP status code to send with the response.
+// logger - The structured logger used for reporting response errors.
+func writeJSONResponse(
+	writer http.ResponseWriter,
+	payload any,
+	statusCode int,
+	logger *slog.Logger,
+) {
+	var buf bytes.Buffer
+
+	if err := json.NewEncoder(writer).Encode(payload); err != nil {
+		logger.Error("failed to encode to JSON", slog.Any("error", err))
+		writer.Header().Set("Content-Type", "application/vnd.api+json")
+		writer.WriteHeader(http.StatusInternalServerError)
+		http.Error(writer, "internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	writer.Header().Set("Content-Type", "application/vnd.api+json")
+	writer.WriteHeader(statusCode)
+
+	if _, err := writer.Write(buf.Bytes()); err != nil {
+		logger.Error("failed to write HTTP response", slog.Any("error", err))
+	}
+}
+
 // LoginUser authenticates a user login request and returns a JSON:API compliant
 // response containing a newly generated JWT access token.
 //
@@ -288,45 +338,28 @@ func (u UserHandler) LoginUser(writer http.ResponseWriter, request *http.Request
 
 	// Return a error response if the user credentials are invalid
 	if len(validationErrs) > 0 {
-		writer.Header().Set("Content-Type", "application/vnd.api+json")
-		writer.WriteHeader(http.StatusUnprocessableEntity)
 		resp := dto.NewErrorDocument(validationErrs)
-
-		if err := json.NewEncoder(writer).Encode(resp); err != nil {
-			u.logger.Error(
-				"server error",
-				slog.String("type", "failed to encode JSON data"),
-			)
-
-			http.Error(
-				writer,
-				"failed to encode to JSON",
-				http.StatusInternalServerError,
-			)
-		}
-
+		writeJSONResponse(writer, resp, http.StatusUnprocessableEntity, u.logger)
 		return
 	}
 
 	// Generate the JWT, or return an error response if it failed
 	token, tokenErr := createJWT()
 	if tokenErr != nil {
-		writer.Header().Set("Content-Type", "application/vnd.api+json")
-		writer.WriteHeader(http.StatusUnprocessableEntity)
-		resp := dto.NewErrorDocument(validationErrs)
-		if err := json.NewEncoder(writer).Encode(resp); err != nil {
-			u.logger.Error(
-				"server error",
-				slog.String("type", "failed to encode JSON data"),
-			)
-
-			http.Error(
-				writer,
-				"failed to encode to JSON",
-				http.StatusInternalServerError,
-			)
+		// Create an error object to be serialised
+		errObject := []dto.ErrorObject{
+			{
+				Code:   strconv.Itoa(http.StatusInternalServerError),
+				Status: "Internal Server Error",
+				Title:  "Failed to Generate JWT",
+				Detail: tokenErr.Error(),
+			},
 		}
 
+		// Create a JSON object with the error details created above and serialise the
+		// object before returning the execution flow
+		resp := dto.NewErrorDocument(errObject)
+		writeJSONResponse(writer, resp, http.StatusInternalServerError, u.logger)
 		return
 	}
 
@@ -342,19 +375,10 @@ func (u UserHandler) LoginUser(writer http.ResponseWriter, request *http.Request
 		},
 	}
 
-	// Create a JSON:API compliant "document" to be serialised into a JSON response
-	resp := dto.NewSingleDocument(resourceObject)
-
-	// Set the HTTP headers for the response
-	writer.Header().Set("Content-Type", "appplication/vnd.api+json")
-	writer.WriteHeader(http.StatusOK)
-
 	// Create an appropriate log statement before serializing the response
 	u.logger.Info("new tokens generated", slog.String("username", username))
 
-	// Serialise the objects and write a JSON response for the client
-	encodingErr := json.NewEncoder(writer).Encode(resp)
-	if encodingErr != nil {
-		http.Error(writer, "failed to encode to JSON", http.StatusInternalServerError)
-	}
+	// Create a JSON:API compliant object and serialise it into a JSON document
+	resp := dto.NewSingleDocument(resourceObject)
+	writeJSONResponse(writer, resp, http.StatusOK, u.logger)
 }
