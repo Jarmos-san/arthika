@@ -21,6 +21,7 @@ import (
 	jwt "github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 
+	"github.com/Jarmos-san/arthika/server/internal/config"
 	"github.com/Jarmos-san/arthika/server/internal/dto"
 	"github.com/Jarmos-san/arthika/server/internal/services"
 )
@@ -255,10 +256,14 @@ func (u UserHandler) LoginUser(writer http.ResponseWriter, request *http.Request
 		return
 	}
 
-	key := []byte("super-secret-key")
-	t := jwt.New(jwt.SigningMethodHS512)
-	s, signingErr := t.SignedString(key)
+	// Load the app config, required for fetching the secret key for the JWT
+	config := config.LoadConfig()
 
+	key := []byte(config.TokenSecret)    // Use the secret token loaded from the configs
+	t := jwt.New(jwt.SigningMethodHS512) // Use HMAC-SHA256 algorithm for token signing
+	s, signingErr := t.SignedString(key) // Create a signed JWT (or throw an error)
+
+	// Throw an error if the token failed to create
 	if signingErr != nil {
 		msg := "failed to sign token"
 		u.logger.Error(msg, slog.String("error", signingErr.Error()))
