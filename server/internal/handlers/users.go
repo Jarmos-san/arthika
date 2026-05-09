@@ -15,7 +15,12 @@ import (
 	"encoding/json"
 	"log/slog"
 	"net/http"
+	"strconv"
+	"time"
 
+	"github.com/google/uuid"
+
+	"github.com/Jarmos-san/arthika/server/internal/dto"
 	"github.com/Jarmos-san/arthika/server/internal/services"
 )
 
@@ -190,4 +195,91 @@ func (u UserHandler) CreateUser( //nolint:funlen
 		slog.String("username", resp.Name),
 		slog.String("password", resp.PasswordHash),
 	)
+}
+
+// LoginUser authenticates a user login request and returns a JSON:API compliant
+// response containing a newly generated JWT access token.
+//
+// The handler performs the following operations:
+//
+// 1. Reads the username and password from the incoming request.
+// 2. Validates that all required fields are present.
+// 3. Returns validation errors if required fields are missing.
+// 4. Generates a signed JWT access token.
+// 5. Wraps the token in a JSON:API resource object.
+// 6. Serialises and returns the response to the client.
+//
+// Validation failures return HTTP 422 Unprocessable Entity responses. Successful
+// authentication returns HTTP 200 OK.
+//
+// Parameters:
+//
+//	writer - The HTTP response writer used to construct the response.
+//	request - The incoming HTTP request containing login credentials.
+func (u UserHandler) LoginUser(writer http.ResponseWriter, request *http.Request) {
+	// Read the form-data from the request
+	email := request.FormValue("email")       // Read the email address
+	password := request.FormValue("password") // Read the password
+
+	// Initialise a slice to store the validation errors which will be serialised as a
+	// single object
+	validationErrs := make([]dto.ErrorObject, 0)
+
+	// Validate the username, or return an error response if invalid
+	if email == "" {
+		u.logger.Error("missing required field", slog.String("field", "username"))
+		validationErrs = append(validationErrs, validationError("username"))
+	}
+
+	// Validate the password, or return an error response if invalid
+	if password == "" {
+		u.logger.Error("missing required field", slog.String("field", "password"))
+		validationErrs = append(validationErrs, validationError("password"))
+	}
+
+	// Return a error response if the user credentials are invalid
+	if len(validationErrs) > 0 {
+		resp := dto.NewErrorDocument(validationErrs)
+		writeJSONResponse(writer, resp, http.StatusUnprocessableEntity, u.logger)
+		return
+	}
+
+	// Generate the JWT, or return an error response if it failed
+	token, tokenErr := createJWT()
+	if tokenErr != nil {
+		// Create an error object to be serialised
+		errObject := []dto.ErrorObject{
+			{
+				Code:   strconv.Itoa(http.StatusInternalServerError),
+				Status: "Internal Server Error",
+				Title:  "Failed to Generate JWT",
+				Detail: tokenErr.Error(),
+			},
+		}
+
+		// Create a JSON object with the error details created above and serialise the
+		// object before returning the execution flow
+		resp := dto.NewErrorDocument(errObject)
+		writeJSONResponse(writer, resp, http.StatusInternalServerError, u.logger)
+		return
+	}
+
+	// Create a "Resource Object" (according to the JSON:API spec) to respond to the
+	// client request with the JWT
+	resourceObject := dto.ResourceObject{
+		Type: "tokens",
+		ID:   uuid.NewString(),
+		Attributes: map[string]any{
+			"accessToken": token,
+			"tokenType":   "Bearer",
+			"expiresIn":   time.Hour.Seconds(), // 3600 seconds
+		},
+	}
+
+	// Create an appropriate log statement before serializing the response
+	u.logger.Info("new tokens generated", slog.String("username", email))
+
+	// Create a JSON:API compliant object and serialise it into a JSON document
+	resp := dto.NewSingleDocument(resourceObject)
+	writeJSONResponse(writer, resp, http.StatusOK, u.logger)
 }

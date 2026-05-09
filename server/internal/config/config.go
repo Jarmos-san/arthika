@@ -41,6 +41,9 @@ type Config struct {
 	// LogLevel defines the minimum severity of logs emitted by the application logger.
 	// Supported values include "debug", "info", "warn", and "error".
 	LogLevel string
+
+	// TokenSecret defines a string of alphanumeric characters used to sign the JWTs.
+	TokenSecret string
 }
 
 // getEnv() retrieves the value of the environment variable identified by key. If the
@@ -91,6 +94,7 @@ func LoadConfig() Config {
 		WriteTimeout: defaultTimeout,
 		IdleTimeout:  defaultTimeout,
 		LogLevel:     "info",
+		TokenSecret:  "super-secret-token",
 	}
 
 	addr := getEnv("ADDR", defaultCfg.Addr)
@@ -98,6 +102,7 @@ func LoadConfig() Config {
 	writeTimeout, _ := getEnvDuration("WRITE_TIMEOUT", defaultCfg.WriteTimeout)
 	idleTimeout, _ := getEnvDuration("IDLE_TIMEOUT", defaultCfg.IdleTimeout)
 	logLevel := getEnv("LOG_LEVEL", defaultCfg.LogLevel)
+	tokenSecret := getEnv("TOKEN_SECRET", defaultCfg.TokenSecret)
 
 	return Config{
 		Addr:         addr,
@@ -105,5 +110,6 @@ func LoadConfig() Config {
 		WriteTimeout: writeTimeout,
 		IdleTimeout:  idleTimeout,
 		LogLevel:     logLevel,
+		TokenSecret:  tokenSecret,
 	}
 }

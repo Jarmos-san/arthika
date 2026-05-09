@@ -25,6 +25,7 @@ func TestLoadConfig_Defaults(t *testing.T) {
 		WriteTimeout: 10 * time.Second,
 		IdleTimeout:  10 * time.Second,
 		LogLevel:     "info",
+		TokenSecret:  "super-secret-token",
 	}
 
 	if cfg != defaultCfg {
@@ -40,6 +41,7 @@ func TestLoadConfig_FromEnv(t *testing.T) {
 	t.Setenv("WRITE_TIMEOUT", "6s")
 	t.Setenv("IDLE_TIMEOUT", "7s")
 	t.Setenv("LOG_LEVEL", "debug")
+	t.Setenv("TOKEN_SECRET", "super-secret-token")
 
 	cfg := config.LoadConfig()
 
@@ -61,6 +63,10 @@ func TestLoadConfig_FromEnv(t *testing.T) {
 
 	if cfg.LogLevel != "debug" {
 		t.Errorf("expected LogLevel debug, got %s", cfg.LogLevel)
+	}
+
+	if cfg.TokenSecret != "super-secret-token" {
+		t.Errorf("expected TokenSecret 'super-secret-token', got %s", cfg.TokenSecret)
 	}
 }
 
