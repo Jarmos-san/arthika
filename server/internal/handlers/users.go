@@ -12,18 +12,14 @@
 package handlers
 
 import (
-	"bytes"
 	"encoding/json"
-	"fmt"
 	"log/slog"
 	"net/http"
 	"strconv"
 	"time"
 
-	jwt "github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 
-	"github.com/Jarmos-san/arthika/server/internal/config"
 	"github.com/Jarmos-san/arthika/server/internal/dto"
 	"github.com/Jarmos-san/arthika/server/internal/services"
 )
@@ -201,101 +197,6 @@ func (u UserHandler) CreateUser( //nolint:funlen
 	)
 }
 
-// validationError creates a JSON:API compliant error object for a missing required
-// field validation failure.
-//
-// The returned dto.ErrorObject contains metadata describing the validation error
-// including the HTTP status code, a short title and a detailed human-readable message
-// indicating which field is missing.
-//
-// Parameters:
-//
-//	field - The name of the field that failed the validation check.
-//
-// Returns:
-//
-//	A dto.ErrorObject representing the validation failure.
-//
-// TODO: Move this function elsewhere perhaps into a different module
-func validationError(field string) dto.ErrorObject {
-	return dto.ErrorObject{
-		Status: "Validation Error",
-		Code:   strconv.Itoa(http.StatusUnprocessableEntity),
-		Title:  "Missing Required Field",
-		Detail: fmt.Sprintf("Missing required field: '%s' cannot be empty", field),
-	}
-}
-
-// createJWT generates and signs a new JSON Web Token (JWT) using the application's
-// configured secret key.
-//
-// The JWT is signed using the HS512 signing algorithm. The secret key used for signing
-// is loaded frfom the application configuration.
-//
-// Returns:
-//
-//	string - The signed JWT.
-//	error - An error if token signing fails.
-func createJWT() (string, error) {
-	// Load the app config, required for fetching the secret key for the JWT
-	config := config.LoadConfig()
-
-	// Setup the JWT generation process
-	key := []byte(config.TokenSecret)    // Use the secret token loaded from the configs
-	t := jwt.New(jwt.SigningMethodHS512) // Use HMAC-SHA256 algorithm for token signing
-
-	return t.SignedString(key) // Create a signed JWT (or throw an error)
-}
-
-// writeJSONResponse serialises the provided payload into a JSON document and writes it
-// to the HTTP response writer using the supplied status code.
-//
-// The helper centralises JSON response handling for HTTP handlers by:
-//
-// 1. Encoding the provided payload into JSON.
-// 2. Setting the appropriate JSON:API content type header.
-// 3. Writing the HTTP status code.
-// 4. Writing the serialised JSON response body.
-// 5. Logging any encoding or write failures.
-//
-// The response uses the JSON:API media type:
-//
-//	Content-Type: application/vnd.api+json
-//
-// If JSON encoding fails, the function logs the error and attempts to return an HTTP
-// 500 Internal Server Error response.
-//
-// Parameters:
-//
-//	writer - The HTTP response writer used to construct the response.
-//	payload - The response payload to serialise into JSON.
-//
-// statusCode - The HTTP status code to send with the response.
-// logger - The structured logger used for reporting response errors.
-func writeJSONResponse(
-	writer http.ResponseWriter,
-	payload any,
-	statusCode int,
-	logger *slog.Logger,
-) {
-	var buf bytes.Buffer
-
-	if err := json.NewEncoder(writer).Encode(payload); err != nil {
-		logger.Error("failed to encode to JSON", slog.Any("error", err))
-		writer.Header().Set("Content-Type", "application/vnd.api+json")
-		writer.WriteHeader(http.StatusInternalServerError)
-		http.Error(writer, "internal server error", http.StatusInternalServerError)
-		return
-	}
-
-	writer.Header().Set("Content-Type", "application/vnd.api+json")
-	writer.WriteHeader(statusCode)
-
-	if _, err := writer.Write(buf.Bytes()); err != nil {
-		logger.Error("failed to write HTTP response", slog.Any("error", err))
-	}
-}
-
 // LoginUser authenticates a user login request and returns a JSON:API compliant
 // response containing a newly generated JWT access token.
 //
@@ -317,7 +218,7 @@ func writeJSONResponse(
 //	request - The incoming HTTP request containing login credentials.
 func (u UserHandler) LoginUser(writer http.ResponseWriter, request *http.Request) {
 	// Read the form-data from the request
-	username := request.FormValue("username") // Read the username
+	email := request.FormValue("email")       // Read the email address
 	password := request.FormValue("password") // Read the password
 
 	// Initialise a slice to store the validation errors which will be serialised as a
@@ -325,7 +226,7 @@ func (u UserHandler) LoginUser(writer http.ResponseWriter, request *http.Request
 	validationErrs := make([]dto.ErrorObject, 0)
 
 	// Validate the username, or return an error response if invalid
-	if username == "" {
+	if email == "" {
 		u.logger.Error("missing required field", slog.String("field", "username"))
 		validationErrs = append(validationErrs, validationError("username"))
 	}
@@ -376,7 +277,7 @@ func (u UserHandler) LoginUser(writer http.ResponseWriter, request *http.Request
 	}
 
 	// Create an appropriate log statement before serializing the response
-	u.logger.Info("new tokens generated", slog.String("username", username))
+	u.logger.Info("new tokens generated", slog.String("username", email))
 
 	// Create a JSON:API compliant object and serialise it into a JSON document
 	resp := dto.NewSingleDocument(resourceObject)
