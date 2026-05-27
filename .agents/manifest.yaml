@@ -1,0 +1,8 @@
+specVersion: "1.0"
+defaults:
+  mode: default
+  policy: default
+enabled:
+  modes: ["default"]
+  policies: []
+  skills: []
