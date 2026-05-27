@@ -14,6 +14,8 @@ import (
 	"syscall"
 	"time"
 
+	chi "github.com/go-chi/chi/v5"
+	chimw "github.com/go-chi/chi/v5/middleware"
 	"github.com/google/uuid"
 
 	"github.com/Jarmos-san/arthika/server/internal/application"
@@ -49,18 +51,20 @@ func main() { //nolint:funlen
 
 	logger := logger.New(cfg.LogLevel)
 
-	// Initialise the HTTP request multiplexer and register routes.
-	mux := http.NewServeMux()
+	// Initialise the Chi router and register routes.
+	router := chi.NewRouter()
+	router.Use(chimw.Logger, chimw.Recoverer)
 
 	// Register the routes and their handlers
 	userService := services.NewUserService()
 	userHandler := handlers.NewUserHandler(userService, logger)
-	mux.HandleFunc("GET /users/", userHandler.GetUser)
-	mux.HandleFunc("POST /users/register", userHandler.CreateUser)
-	mux.HandleFunc("POST /login", userHandler.LoginUser)
+
+	router.Get("/users/", userHandler.GetUser)
+	router.Post("/users/register", userHandler.CreateUser)
+	router.Post("/login", userHandler.LoginUser)
 
 	// Temporary scratch handler for experimental requirements only
-	mux.HandleFunc("GET /scratch/", func(writer http.ResponseWriter, _ *http.Request) {
+	router.Get("/scratch/", func(writer http.ResponseWriter, _ *http.Request) {
 		writer.Header().Set("Content-Type", "application/vnd.api+json")
 		writer.WriteHeader(http.StatusOK)
 
@@ -85,7 +89,7 @@ func main() { //nolint:funlen
 	})
 
 	// Construct the app container with configurations and the handler.
-	app := application.New(cfg, mux, logger)
+	app := application.New(cfg, router, logger)
 
 	// Create a context that is cancelled on interrupt or kill signals.
 	ctx, stop := signal.NotifyContext(
