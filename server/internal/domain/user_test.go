@@ -1,17 +1,17 @@
-package models_test
+package domain_test
 
 import (
 	"encoding/json"
 	"strings"
 	"testing"
 
-	"github.com/Jarmos-san/arthika/server/internal/models"
+	"github.com/Jarmos-san/arthika/server/internal/domain"
 )
 
 func TestUser_JSONSerialization(t *testing.T) {
 	t.Parallel()
 
-	user := models.User{
+	user := domain.User{
 		ID:           "123",
 		Username:     "admin",
 		Email:        "admin@example.com",
@@ -53,7 +53,7 @@ func TestUser_JSONUnmarshal(t *testing.T) {
 		"email": "admin@example.com"
 	}`
 
-	var user models.User
+	var user domain.User
 
 	err := json.Unmarshal([]byte(input), &user)
 	if err != nil {

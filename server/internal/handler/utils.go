@@ -1,4 +1,4 @@
-package handlers
+package handler
 
 import (
 	"encoding/json"
@@ -7,10 +7,9 @@ import (
 	"net/http"
 	"strconv"
 
-	jwt "github.com/golang-jwt/jwt/v5"
-
 	"github.com/Jarmos-san/arthika/server/internal/config"
 	"github.com/Jarmos-san/arthika/server/internal/dto"
+	jwt "github.com/golang-jwt/jwt/v5"
 )
 
 // validationError creates a JSON:API compliant error object for a missing required

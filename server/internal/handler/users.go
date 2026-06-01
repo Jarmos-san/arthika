@@ -1,4 +1,4 @@
-// Package handlers provides HTTP transport layer implementations.
+// Package handler provides HTTP transport layer implementations.
 //
 // It is responsible for handling incoming HTTP requests, delegating business logic to
 // the appropriate services, and formatting HTTP responses.
@@ -9,7 +9,7 @@
 //   - status code handling
 //
 // Business logic must be delegated to the service layer.
-package handlers
+package handler
 
 import (
 	"encoding/json"
@@ -18,10 +18,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/google/uuid"
-
 	"github.com/Jarmos-san/arthika/server/internal/dto"
-	"github.com/Jarmos-san/arthika/server/internal/services"
+	"github.com/Jarmos-san/arthika/server/internal/service"
+	"github.com/google/uuid"
 )
 
 // UserHandler handles HTTP requests related to user resources.
@@ -33,7 +32,7 @@ import (
 // The handler is safe for concurrent use provided its dependencies are also
 // concurrency-safe.
 type UserHandler struct {
-	service services.UserService
+	service service.UserService
 	logger  *slog.Logger
 }
 
@@ -44,7 +43,7 @@ type UserHandler struct {
 //   - logger:  used for structured logging within the handler
 //
 // The returned handler is ready to be registered with an HTTP router.
-func NewUserHandler(service services.UserService, logger *slog.Logger) *UserHandler {
+func NewUserHandler(service service.UserService, logger *slog.Logger) *UserHandler {
 	return &UserHandler{
 		service: service,
 		logger:  logger,

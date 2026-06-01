@@ -42,18 +42,18 @@ public sharing.
 
 ### Tech Stack
 
-- **Backend:** Go (net/http)
-- **Frontend:** Nuxt.js (Vue 3)
-- **Database:** SQLite
+- **Backend:** Go + Chi router
+- **Frontend:** Nuxt.js (Vue 3) — *not yet implemented*
+- **Database:** SQLite — *not yet implemented*
 
 ### System Layout
 
 ```
-Frontend (Nuxt.js)
+Frontend (Nuxt.js)   — not yet implemented
         ↓
-Backend API (Go)
+Backend API (Go + Chi)
         ↓
-Database (PostgreSQL / SQLite)
+Database (SQLite)    — not yet implemented
 ```
 
 ---
@@ -64,6 +64,8 @@ Database (PostgreSQL / SQLite)
 
 ```
 Handler → Service → Repository → Database
+
+> **Status:** Handler and Service layers are implemented. Repository and Database layers are planned but not yet built.
 ```
 
 #### Handler Layer
@@ -95,18 +97,19 @@ Handler → Service → Repository → Database
 
 ```
 cmd/
-  api/
+  server/
     main.go
 
 internal/
-  app/
-    app.go
-  handler/
-  service/
-  repository/
-  domain/
-  middleware/
-  config/
+  app/          # composition root, lifecycle
+  handler/      # HTTP transport layer
+  service/      # business logic
+  repository/   # data access — not yet implemented
+  domain/       # core entities and types
+  dto/          # JSON:API request/response types
+  middleware/   # HTTP middleware — not yet implemented
+  config/       # environment-based configuration
+  logger/       # structured slog setup
 ```
 
 ---
@@ -187,26 +190,29 @@ Portfolio → Snapshot → Public URL
 - JSON request/response format
 - Stateless authentication
 
-### Example Endpoints
+### Implemented Endpoints
 
 ```
-POST   /auth/register
-POST   /auth/login
+GET    /users/              # placeholder user retrieval
+POST   /users/register      # user registration
+POST   /login               # JWT login
+```
 
+### Planned Endpoints
+
+```
 GET    /portfolio
 POST   /transactions
 GET    /transactions
-
 GET    /watchlist
 POST   /watchlist
-
 POST   /snapshots
 GET    /snapshots/{id}
 ```
 
 ---
 
-## Frontend Architecture (Nuxt.js)
+## Frontend Architecture (Nuxt.js) — *planned*
 
 ### Structure
 
@@ -240,6 +246,8 @@ stores/
 
 - Ideal for single-user/self-hosted setups
 - Lightweight and easy to deploy
+
+> **Note:** No database layer is implemented yet. Data is currently stubbed in the service layer.
 
 ---
 

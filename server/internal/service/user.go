@@ -1,16 +1,15 @@
-// Package services provides business logic abstractions and implementations.
+// Package service provides business logic abstractions and implementations.
 //
 // It defines service interfaces and their concrete implementations. Services should
 // encapsulate domain logic and remain independent of transport layers.
-package services
+package service
 
 import (
 	"fmt"
 
+	"github.com/Jarmos-san/arthika/server/internal/dto"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
-
-	"github.com/Jarmos-san/arthika/server/internal/dto"
 )
 
 // User represents a basic user entity exposed by the service layer.

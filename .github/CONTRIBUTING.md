@@ -1,12 +1,12 @@
-# Contributing to Dalal
+# Contributing to Arthika
 
 If you are interested in contributing to the project, thank you for your
-consideration! Another set of helping hand ensures the projects true to its
-community committments and progress.
+consideration! Another set of helping hands ensures the project stays true to its
+community commitments and progress.
 
 This document will walk you through some guidelines and processes involved when
-contributing to the project's source code. So you are requested to read the
-article thoroughly before writing any code.
+contributing to the project's source code. Please read the article thoroughly
+before writing any code.
 
 ## Code of Conduct
 
@@ -19,11 +19,12 @@ the principles of respect, inclusivity, and collaboration.
 There are several ways to contribute to our projects:
 
 - Reporting Bugs: If you find a bug, please
-  [open an issue](link-to-issue-tracker) and provide details about the problem
-  you encountered.
+  [open an issue](https://github.com/Jarmos-san/arthika/issues/new) and provide
+  details about the problem you encountered.
 
 - Enhancements and Features: If you have ideas for enhancements or new features,
-  feel free to [open an issue](link-to-issue-tracker) to discuss your proposal.
+  feel free to [open an issue](https://github.com/Jarmos-san/arthika/issues/new)
+  to discuss your proposal.
 
 - Documentation Improvements: Help us improve our documentation by submitting
   pull requests to clarify explanations, fix errors, or provide additional
@@ -67,9 +68,9 @@ licensed under the project's open-source license.
 ## Contact
 
 If you have any questions or need assistance during the contribution process,
-feel free to contact [Somraj Saha](contact@jarmos.dev).
+feel free to contact [Somraj Saha](mailto:contact@jarmos.dev).
 
 We appreciate your contributions and look forward to working with you to improve
 our projects!
 
-Thank you once again! <3
+Thank you once again!
