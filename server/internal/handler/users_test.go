@@ -1,4 +1,4 @@
-// Package handlers_test contains black-box tests for HTTP handlers.
+// Package handler_test contains black-box tests for HTTP handler.
 //
 // These tests validate the behaviour of the transport layer in isolation by:
 //   - mocking service dependencies
@@ -7,7 +7,7 @@
 //
 // The goal is NOT to test business logic, but to ensure correct interaction
 // between the handler and its dependencies, along with proper HTTP semantics.
-package handlers_test
+package handler_test
 
 import (
 	"context"
@@ -17,8 +17,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/Jarmos-san/arthika/server/internal/handlers"
-	"github.com/Jarmos-san/arthika/server/internal/services"
+	"github.com/Jarmos-san/arthika/server/internal/dto"
+	"github.com/Jarmos-san/arthika/server/internal/handler"
+	"github.com/Jarmos-san/arthika/server/internal/service"
 )
 
 // mockUserService is a test double that implements the UserService interface.
@@ -27,7 +28,7 @@ import (
 //   - control the output of the service layer
 //   - simulate both success and failure scenarios deterministically
 type mockUserService struct {
-	user services.User
+	user service.User
 	err  error
 }
 
@@ -35,8 +36,13 @@ type mockUserService struct {
 //
 // NOTE: This signature must match the service interface exactly.
 // If the real service uses context, this should too.
-func (m mockUserService) GetUser() (services.User, error) {
+func (m mockUserService) GetUser() (service.User, error) {
 	return m.user, m.err
+}
+
+// CreateUser is a stub that satisfies the service interface.
+func (m mockUserService) CreateUser(_ string, _ string) (dto.CreateUser, error) {
+	return dto.CreateUser{}, nil
 }
 
 // TestGetUser_Success verifies the happy-path behaviour of the handler.
@@ -51,7 +57,7 @@ func TestGetUser_Success(t *testing.T) {
 
 	// Arrange: mock service is returning a valid user.
 	mockSvc := mockUserService{ //nolint:exhaustruct
-		user: services.User{
+		user: service.User{
 			Name: "Test User",
 		},
 	}
@@ -59,7 +65,7 @@ func TestGetUser_Success(t *testing.T) {
 	logger := slog.Default()
 
 	// Inject mock dependencies into the handler.
-	handler := handlers.NewUserHandler(mockSvc, logger)
+	userHandler := handler.NewUserHandler(mockSvc, logger)
 
 	// Create a test HTTP request
 	req := httptest.NewRequestWithContext(
@@ -73,7 +79,7 @@ func TestGetUser_Success(t *testing.T) {
 	recorder := httptest.NewRecorder()
 
 	// Act: invoke handler directly
-	handler.GetUser(recorder, req)
+	userHandler.GetUser(recorder, req)
 
 	// Assert: HTTP status code
 	if recorder.Code != http.StatusOK {
@@ -86,7 +92,7 @@ func TestGetUser_Success(t *testing.T) {
 	}
 
 	// Assert: Response body structure and content
-	var resp handlers.UserResponse
+	var resp handler.UserResponse
 
 	err := json.NewDecoder(recorder.Body).Decode(&resp)
 	if err != nil {
@@ -124,7 +130,7 @@ func TestGetUser_Error(t *testing.T) {
 	logger := slog.Default()
 
 	// Inject mock dependencies into the handler
-	handler := handlers.NewUserHandler(mockSvc, logger)
+	userHandler := handler.NewUserHandler(mockSvc, logger)
 
 	// Create a test HTTP request
 	req := httptest.NewRequestWithContext(
@@ -138,7 +144,7 @@ func TestGetUser_Error(t *testing.T) {
 	recorder := httptest.NewRecorder()
 
 	// Act: Invoke handler directly
-	handler.GetUser(recorder, req)
+	userHandler.GetUser(recorder, req)
 
 	// Assert: HTTP status code
 	if recorder.Code != http.StatusInternalServerError {

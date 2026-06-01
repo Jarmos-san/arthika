@@ -2,7 +2,7 @@
 //
 // These tests validate correct wiring of dependencies, server lifecycle management, and
 // basic HTTP request handling.
-package application_test
+package app_test
 
 import (
 	"context"
@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Jarmos-san/arthika/server/internal/application"
+	"github.com/Jarmos-san/arthika/server/internal/app"
 	"github.com/Jarmos-san/arthika/server/internal/config"
 )
 
@@ -41,7 +41,7 @@ func TestNew_InitializesApplication(t *testing.T) {
 	handler := http.NewServeMux()
 	logger := newTestLogger()
 
-	app := application.New(cfg, handler, logger)
+	app := app.New(cfg, handler, logger)
 
 	if app.Config != cfg {
 		t.Errorf("expected config %+v, got %+v", cfg, app.Config)
@@ -107,7 +107,7 @@ func TestRunAndShutdown(t *testing.T) {
 	})
 
 	logger := newTestLogger()
-	app := application.New(cfg, mux, logger)
+	app := app.New(cfg, mux, logger)
 
 	// Replace server listener manually to control lifecycle
 	app.Server.Addr = ""
@@ -180,7 +180,7 @@ func TestServer_HandlesRequest(t *testing.T) {
 	})
 
 	logger := newTestLogger()
-	app := application.New(cfg, mux, logger)
+	app := app.New(cfg, mux, logger)
 
 	go func() {
 		_ = app.Server.Serve(listener)

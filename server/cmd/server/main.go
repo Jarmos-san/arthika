@@ -14,16 +14,15 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/Jarmos-san/arthika/server/internal/app"
+	"github.com/Jarmos-san/arthika/server/internal/config"
+	"github.com/Jarmos-san/arthika/server/internal/dto"
+	"github.com/Jarmos-san/arthika/server/internal/handler"
+	"github.com/Jarmos-san/arthika/server/internal/logger"
+	"github.com/Jarmos-san/arthika/server/internal/service"
 	chi "github.com/go-chi/chi/v5"
 	chimw "github.com/go-chi/chi/v5/middleware"
 	"github.com/google/uuid"
-
-	"github.com/Jarmos-san/arthika/server/internal/application"
-	"github.com/Jarmos-san/arthika/server/internal/config"
-	"github.com/Jarmos-san/arthika/server/internal/dto"
-	"github.com/Jarmos-san/arthika/server/internal/handlers"
-	"github.com/Jarmos-san/arthika/server/internal/logger"
-	"github.com/Jarmos-san/arthika/server/internal/services"
 )
 
 // shutdownTimeout defines the maximum duration allowed for gracefully shutting
@@ -56,8 +55,8 @@ func main() { //nolint:funlen
 	router.Use(chimw.Logger, chimw.Recoverer)
 
 	// Register the routes and their handlers
-	userService := services.NewUserService()
-	userHandler := handlers.NewUserHandler(userService, logger)
+	userService := service.NewUserService()
+	userHandler := handler.NewUserHandler(userService, logger)
 
 	router.Get("/users/", userHandler.GetUser)
 	router.Post("/users/register", userHandler.CreateUser)
@@ -89,7 +88,7 @@ func main() { //nolint:funlen
 	})
 
 	// Construct the app container with configurations and the handler.
-	app := application.New(cfg, router, logger)
+	app := app.New(cfg, router, logger)
 
 	// Create a context that is cancelled on interrupt or kill signals.
 	ctx, stop := signal.NotifyContext(

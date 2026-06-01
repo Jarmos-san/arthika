@@ -1,11 +1,11 @@
-// Package models define the core domain entities used across the application.
+// Package domain define the core domain entities used across the application.
 //
-// Models represent the internal data structures of the system and should remain
+// Domain types represent the internal data structures of the system and should remain
 // independent of transport-layer concerns such as HTTP request/response formats.
 //
 // These structs may contain sensitive or internal-only fields that must not be exposed
 // directly to external clients.
-package models
+package domain
 
 // User represents an application user within the system.
 //

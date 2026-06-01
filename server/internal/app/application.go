@@ -1,9 +1,9 @@
-// Package application provides the core application container responsible for wiring
+// Package app provides the core application container responsible for wiring
 // configuration, HTTP handlers and server lifecycle management.
 //
 // It acts as the composition root of the service, coordinating dependencies and
 // exposing methods to start and gracefully shutdown the HTTP server.
-package application
+package app
 
 import (
 	"context"
