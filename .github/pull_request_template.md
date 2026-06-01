@@ -1,9 +1,21 @@
-## Description
+## Summary
 
-TODO: Provide a clear and concise summary of the changes in this PR.
+<!-- Describe what this PR changes and why. -->
 
-TODO: Add a screenshot (or recording), if applicable.
+## Type of Change
 
-## Modifications
+- [ ] Bug fix
+- [ ] New feature
+- [ ] Documentation update
+- [ ] Refactor / chore
 
-TODO: Provide (in bullet points) a detailed description of the changes/updates.
+## Testing
+
+- [ ] `go test ./...` passes
+- [ ] `task lint` passes
+
+## Checklist
+
+- [ ] Code follows project conventions
+- [ ] Tests added / updated
+- [ ] Documentation updated

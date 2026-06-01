@@ -10,12 +10,14 @@ go run ./cmd/server    # start the server (default :8000)
 
 ## Architecture
 
-- Entrypoint: `server/cmd/server/main.go` (not `cmd/api/main.go` as ARCHITECTURE.md states)
+- Entrypoint: `server/cmd/server/main.go`
 - Layered: **Handler → Service → (Repository — not yet implemented)**
+- Packages: `app/`, `handler/`, `service/`, `domain/`, `dto/`, `config/`, `logger/` under `server/internal/`
 - API format: JSON:API (`application/vnd.api+json`)
 - Config from env vars only: `ADDR`, `READ_TIMEOUT`, `WRITE_TIMEOUT`, `IDLE_TIMEOUT`, `LOG_LEVEL`, `TOKEN_SECRET`
+- Routing: `go-chi/chi/v5`
 - Logging: `slog` JSON handler to stdout
-- No database layer yet; no frontend yet (ARCHITECTURE.md is partially aspirational)
+- No database layer yet; no frontend yet
 
 ## Conventions
 

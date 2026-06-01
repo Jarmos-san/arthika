@@ -24,6 +24,14 @@ well-defined framework.
 > Investing is not just about capital allocation-it's about disciplined
 > thinking. Arthika is built to systemize both.
 
+## Quick Start
+
+```bash
+go run ./server/cmd/server    # start server on :8000
+go test ./server/...           # run all tests
+task lint                      # run linters (requires golangci-lint v2)
+```
+
 ## License and Distribution Rights
 
 The project's source code is developed publicly with an open-source license, see
