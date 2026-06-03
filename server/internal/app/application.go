@@ -114,18 +114,27 @@ func (a *Application) Run() error {
 // migration files from the specified directory. If no migrations are pending,
 // ErrNoChange is returned and treated as success.
 func runMigrations(databaseURL, migrationDir string) error {
-	migrator, err := migrate.New(
-		"file://"+migrationDir,
-		"sqlite3://"+databaseURL,
-	)
+	// Attempt to create an object to run the migration
+	migrator, err := migrate.New("file://"+migrationDir, "sqlite3://"+databaseURL)
 	if err != nil {
 		return fmt.Errorf("create migrate instance: %w", err)
 	}
 
+	// Defer closing the migration object post-work
 	defer func() {
-		_, _ = migrator.Close()
+		// Log a warning if the migration source throws an error
+		sourceErr, dbErr := migrator.Close()
+		if sourceErr != nil {
+			slog.Warn("migration source close failed", "error", sourceErr)
+		}
+
+		// Log a warning if there was a database issue during the migration phase
+		if dbErr != nil {
+			slog.Warn("migration database close failed", "error", dbErr)
+		}
 	}()
 
+	// Close the migration object or return an error message
 	err = migrator.Up()
 	if err != nil && !errors.Is(err, migrate.ErrNoChange) {
 		return fmt.Errorf("apply migrations: %w", err)
