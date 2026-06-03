@@ -12,10 +12,9 @@ import (
 	"testing"
 	"time"
 
-	_ "modernc.org/sqlite"
-
 	"github.com/Jarmos-san/arthika/server/internal/app"
 	"github.com/Jarmos-san/arthika/server/internal/config"
+	_ "github.com/mattn/go-sqlite3"
 )
 
 const (

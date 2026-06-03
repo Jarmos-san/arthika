@@ -8,9 +8,14 @@ package app
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
+
+	migrate "github.com/golang-migrate/migrate/v4"
+	_ "github.com/golang-migrate/migrate/v4/database/sqlite3" // Register SQLite3 driver.
+	_ "github.com/golang-migrate/migrate/v4/source/file"      // Register file source.
 
 	"github.com/Jarmos-san/arthika/server/internal/config"
 )
@@ -62,7 +67,7 @@ func New(
 		IdleTimeout:  cfg.IdleTimeout,
 	}
 
-	database, err := sql.Open("sqlite", cfg.DatabaseURL)
+	database, err := sql.Open("sqlite3", cfg.DatabaseURL)
 	if err != nil {
 		return nil, fmt.Errorf("open database: %w", err)
 	}
@@ -70,6 +75,13 @@ func New(
 	err = database.PingContext(context.Background())
 	if err != nil {
 		return nil, fmt.Errorf("ping database: %w", err)
+	}
+
+	if cfg.MigrationDirectory != "" {
+		err = runMigrations(cfg.DatabaseURL, cfg.MigrationDirectory)
+		if err != nil {
+			return nil, fmt.Errorf("run migrations: %w", err)
+		}
 	}
 
 	return &Application{
@@ -91,6 +103,32 @@ func (a *Application) Run() error {
 	err := a.Server.ListenAndServe()
 	if err != nil {
 		return fmt.Errorf("listen and serve: %w", err)
+	}
+
+	return nil
+}
+
+// runMigrations applies all pending SQL migrations using golang-migrate.
+//
+// It connects directly to the SQLite database using the provided URL and reads
+// migration files from the specified directory. If no migrations are pending,
+// ErrNoChange is returned and treated as success.
+func runMigrations(databaseURL, migrationDir string) error {
+	migrator, err := migrate.New(
+		"file://"+migrationDir,
+		"sqlite3://"+databaseURL,
+	)
+	if err != nil {
+		return fmt.Errorf("create migrate instance: %w", err)
+	}
+
+	defer func() {
+		_, _ = migrator.Close()
+	}()
+
+	err = migrator.Up()
+	if err != nil && !errors.Is(err, migrate.ErrNoChange) {
+		return fmt.Errorf("apply migrations: %w", err)
 	}
 
 	return nil
