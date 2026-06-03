@@ -9,6 +9,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"log/slog"
 	"net/http"
 	"os/signal"
 	"syscall"
@@ -23,6 +24,7 @@ import (
 	chi "github.com/go-chi/chi/v5"
 	chimw "github.com/go-chi/chi/v5/middleware"
 	"github.com/google/uuid"
+	_ "github.com/mattn/go-sqlite3"
 )
 
 // shutdownTimeout defines the maximum duration allowed for gracefully shutting
@@ -88,7 +90,15 @@ func main() { //nolint:funlen
 	})
 
 	// Construct the app container with configurations and the handler.
-	app := app.New(cfg, router, logger)
+	app, err := app.New(cfg, router, logger)
+	if err != nil {
+		logger.Error(
+			"failed to initialize application",
+			slog.String("error", err.Error()),
+		)
+
+		return
+	}
 
 	// Create a context that is cancelled on interrupt or kill signals.
 	ctx, stop := signal.NotifyContext(
@@ -118,7 +128,7 @@ func main() { //nolint:funlen
 	defer cancel()
 
 	// Attempt a graceful shutdown of the server.
-	err := app.Shutdown(shutdownCtx)
+	err = app.Shutdown(shutdownCtx)
 	if err != nil {
 		logger.Error("server shutdown failed", "error", err.Error())
 	}
