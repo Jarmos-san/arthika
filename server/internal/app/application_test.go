@@ -12,8 +12,15 @@ import (
 	"testing"
 	"time"
 
+	_ "modernc.org/sqlite"
+
 	"github.com/Jarmos-san/arthika/server/internal/app"
 	"github.com/Jarmos-san/arthika/server/internal/config"
+)
+
+const (
+	logLevel    = "info"
+	databaseURL = ":memory:"
 )
 
 // newTestLogger returns a logger that discards all output. This ensures tests remain
@@ -30,18 +37,22 @@ func newTestLogger() *slog.Logger {
 func TestNew_InitializesApplication(t *testing.T) {
 	t.Parallel()
 
-	cfg := config.Config{
+	cfg := config.Config{ //nolint:exhaustruct
 		Addr:         ":0", // use ephemeral port
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 5 * time.Second,
 		IdleTimeout:  5 * time.Second,
-		LogLevel:     "info",
+		LogLevel:     logLevel,
+		DatabaseURL:  databaseURL,
 	}
 
 	handler := http.NewServeMux()
 	logger := newTestLogger()
 
-	app := app.New(cfg, handler, logger)
+	app, err := app.New(cfg, handler, logger)
+	if err != nil {
+		t.Fatalf("failed to create application: %v", err)
+	}
 
 	if app.Config != cfg {
 		t.Errorf("expected config %+v, got %+v", cfg, app.Config)
@@ -93,12 +104,13 @@ func TestRunAndShutdown(t *testing.T) {
 
 	defer func() { _ = listener.Close() }()
 
-	cfg := config.Config{
+	cfg := config.Config{ //nolint:exhaustruct
 		Addr:         listener.Addr().String(),
 		ReadTimeout:  2 * time.Second,
 		WriteTimeout: 2 * time.Second,
 		IdleTimeout:  2 * time.Second,
-		LogLevel:     "info",
+		LogLevel:     logLevel,
+		DatabaseURL:  databaseURL,
 	}
 
 	mux := http.NewServeMux()
@@ -107,7 +119,11 @@ func TestRunAndShutdown(t *testing.T) {
 	})
 
 	logger := newTestLogger()
-	app := app.New(cfg, mux, logger)
+
+	app, err := app.New(cfg, mux, logger)
+	if err != nil {
+		t.Fatalf("failed to create application: %v", err)
+	}
 
 	// Replace server listener manually to control lifecycle
 	app.Server.Addr = ""
@@ -165,12 +181,13 @@ func TestServer_HandlesRequest(t *testing.T) {
 
 	defer func() { _ = listener.Close() }()
 
-	cfg := config.Config{
+	cfg := config.Config{ //nolint:exhaustruct
 		Addr:         listener.Addr().String(),
 		ReadTimeout:  2 * time.Second,
 		WriteTimeout: 2 * time.Second,
 		IdleTimeout:  2 * time.Second,
-		LogLevel:     "info",
+		LogLevel:     logLevel,
+		DatabaseURL:  databaseURL,
 	}
 
 	mux := http.NewServeMux()
@@ -180,7 +197,11 @@ func TestServer_HandlesRequest(t *testing.T) {
 	})
 
 	logger := newTestLogger()
-	app := app.New(cfg, mux, logger)
+
+	app, err := app.New(cfg, mux, logger)
+	if err != nil {
+		t.Fatalf("failed to create application: %v", err)
+	}
 
 	go func() {
 		_ = app.Server.Serve(listener)
