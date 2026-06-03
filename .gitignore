@@ -1,5 +1,28 @@
-# Created by https://www.toptal.com/developers/gitignore/api/web,go,vim,visualstudiocode
-# Edit at https://www.toptal.com/developers/gitignore?templates=web,go,vim,visualstudiocode
+# Created by https://www.toptal.com/developers/gitignore/api/web,go,vim,visualstudiocode,database
+# Edit at https://www.toptal.com/developers/gitignore?templates=web,go,vim,visualstudiocode,database
+
+### Database ###
+*.accdb
+*.db
+*.dbf
+*.mdb
+*.pdb
+*.sqlite3
+*.db-shm
+*.db-wal
+
+# SQLite database created by golang-migrate
+server/db/arthika.db
+
+# golang-migrate version table
+server/db/arthika.db-shm
+server/db/arthika.db-wal
+
+# Taskfile checksum cache
+.task/
+
+# Project roadmap (not code)
+TODO.md
 
 ### Go ###
 # If you prefer the allow list template instead of the deny list, see community template:
@@ -79,4 +102,4 @@ tags
 *.wat
 *.xhtml
 
-# End of https://www.toptal.com/developers/gitignore/api/web,go,vim,visualstudiocode
+# End of https://www.toptal.com/developers/gitignore/api/web,go,vim,visualstudiocode,database
