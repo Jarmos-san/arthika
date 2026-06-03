@@ -2,6 +2,12 @@
 
 version: "3"
 
+vars:
+  DB_URL: sqlite3://db/arthika.db
+  MIGRATIONS_DIR: db/migrations
+  MIGRATE_INSTALL_TAGS: sqlite3
+  MIGRATE_INSTALL_URL: github.com/golang-migrate/migrate/v4/cmd/migrate@latest
+
 tasks:
   default:
     desc: Display all available commands
@@ -11,3 +17,30 @@ tasks:
     desc: Run linters across the source code.
     dir: server
     cmd: golangci-lint run ./...
+
+  migrate:up:
+    desc: Run pending up migrations
+    dir: server
+    cmd: migrate -path {{.MIGRATIONS_DIR}} -database "{{.DB_URL}}" up
+    preconditions:
+      - sh: which migrate
+        msg: >-
+          migrate binary not found. Install with: go install -tags
+          '{{.MIGRATE_INSTALL_TAGS}}' {{.MIGRATE_INSTALL_URL}}
+
+  migrate:down:
+    desc: Roll back all down migrations
+    dir: server
+    cmd: migrate -path {{.MIGRATIONS_DIR}} -database "{{.DB_URL}}" down -all
+    preconditions:
+      - sh: which migrate
+        msg: >-
+          migrate binary not found. Install with: go install -tags
+          '{{.MIGRATE_INSTALL_TAGS}}' {{.MIGRATE_INSTALL_URL}}
+
+  migrate:reset:
+    desc: Roll back then re-apply all migrations
+    dir: server
+    cmds:
+      - task: migrate:down
+      - task: migrate:up
