@@ -12,7 +12,7 @@ import (
 func TestNewUserService(t *testing.T) {
 	t.Parallel()
 
-	svc := service.NewUserService()
+	svc := service.NewUserService(nil)
 
 	if svc == nil {
 		t.Fatal("expected non-nil UserService, got nil")
@@ -26,7 +26,7 @@ func TestNewUserService(t *testing.T) {
 func TestUserService_GetUser(t *testing.T) {
 	t.Parallel()
 
-	svc := service.NewUserService()
+	svc := service.NewUserService(nil)
 
 	user, err := svc.GetUser()
 	if err != nil {
