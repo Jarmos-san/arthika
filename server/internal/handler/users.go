@@ -18,9 +18,10 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/google/uuid"
+
 	"github.com/Jarmos-san/arthika/server/internal/dto"
 	"github.com/Jarmos-san/arthika/server/internal/service"
-	"github.com/google/uuid"
 )
 
 // UserHandler handles HTTP requests related to user resources.
@@ -164,7 +165,12 @@ func (u UserHandler) CreateUser( //nolint:funlen
 		return
 	}
 
-	resp, serviceErr := u.service.CreateUser(username, password)
+	resp, serviceErr := u.service.CreateUser(
+		request.Context(),
+		username,
+		email,
+		password,
+	)
 	if serviceErr != nil {
 		u.logger.Error("failed to create user")
 
@@ -227,12 +233,14 @@ func (u UserHandler) LoginUser(writer http.ResponseWriter, request *http.Request
 	// Validate the username, or return an error response if invalid
 	if email == "" {
 		u.logger.Error("missing required field", slog.String("field", "username"))
+
 		validationErrs = append(validationErrs, validationError("username"))
 	}
 
 	// Validate the password, or return an error response if invalid
 	if password == "" {
 		u.logger.Error("missing required field", slog.String("field", "password"))
+
 		validationErrs = append(validationErrs, validationError("password"))
 	}
 
@@ -240,6 +248,7 @@ func (u UserHandler) LoginUser(writer http.ResponseWriter, request *http.Request
 	if len(validationErrs) > 0 {
 		resp := dto.NewErrorDocument(validationErrs)
 		writeJSONResponse(writer, resp, http.StatusUnprocessableEntity, u.logger)
+
 		return
 	}
 
@@ -248,7 +257,7 @@ func (u UserHandler) LoginUser(writer http.ResponseWriter, request *http.Request
 	if tokenErr != nil {
 		// Create an error object to be serialised
 		errObject := []dto.ErrorObject{
-			{
+			{ //nolint:exhaustruct
 				Code:   strconv.Itoa(http.StatusInternalServerError),
 				Status: "Internal Server Error",
 				Title:  "Failed to Generate JWT",
@@ -260,12 +269,13 @@ func (u UserHandler) LoginUser(writer http.ResponseWriter, request *http.Request
 		// object before returning the execution flow
 		resp := dto.NewErrorDocument(errObject)
 		writeJSONResponse(writer, resp, http.StatusInternalServerError, u.logger)
+
 		return
 	}
 
 	// Create a "Resource Object" (according to the JSON:API spec) to respond to the
 	// client request with the JWT
-	resourceObject := dto.ResourceObject{
+	resourceObject := dto.ResourceObject{ //nolint:exhaustruct
 		Type: "tokens",
 		ID:   uuid.NewString(),
 		Attributes: map[string]any{

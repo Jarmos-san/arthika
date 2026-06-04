@@ -20,12 +20,14 @@ func TestLoadConfig_Defaults(t *testing.T) {
 	cfg := config.LoadConfig()
 
 	defaultCfg := config.Config{
-		Addr:         ":8000",
-		ReadTimeout:  10 * time.Second,
-		WriteTimeout: 10 * time.Second,
-		IdleTimeout:  10 * time.Second,
-		LogLevel:     "info",
-		TokenSecret:  "super-secret-token",
+		Addr:               ":8000",
+		ReadTimeout:        10 * time.Second,
+		WriteTimeout:       10 * time.Second,
+		IdleTimeout:        10 * time.Second,
+		LogLevel:           "info",
+		TokenSecret:        "super-secret-token",
+		DatabaseURL:        "db/arthika.db",
+		MigrationDirectory: "db/migrations",
 	}
 
 	if cfg != defaultCfg {

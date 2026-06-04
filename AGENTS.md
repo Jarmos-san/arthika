@@ -5,6 +5,7 @@
 ```bash
 go test ./...          # all tests (all use t.Parallel())
 task lint              # golangci-lint v2 with all linters enabled
+task migrate:up        # apply pending database migrations
 go run ./cmd/server    # start the server (default :8000)
 ```
 
@@ -17,7 +18,8 @@ go run ./cmd/server    # start the server (default :8000)
 - Config from env vars only: `ADDR`, `READ_TIMEOUT`, `WRITE_TIMEOUT`, `IDLE_TIMEOUT`, `LOG_LEVEL`, `TOKEN_SECRET`
 - Routing: `go-chi/chi/v5`
 - Logging: `slog` JSON handler to stdout
-- No database layer yet; no frontend yet
+- Database: SQLite via `golang-migrate` CLI (`task migrate:up`/`:down`/`:reset`)
+- No frontend yet
 
 ## Conventions
 
@@ -26,3 +28,4 @@ go run ./cmd/server    # start the server (default :8000)
 - Commit messages linted by `crisp` pre-commit hook
 - Go: tab indentation; JSON/YAML: 2-space (see `.editorconfig`)
 - Formatters: `gci`, `gofmt`, `gofumpt`, `goimports`, `golines` (via golangci-lint)
+- Migrations: `golang-migrate` CLI, naming convention `NNNNNN_description.{up,down}.sql`

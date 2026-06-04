@@ -44,6 +44,16 @@ type Config struct {
 
 	// TokenSecret defines a string of alphanumeric characters used to sign the JWTs.
 	TokenSecret string
+
+	// DatabaseURL is the connection string for the SQLite database.
+	//
+	// Example: "db/arthika.db"
+	DatabaseURL string
+
+	// MigrationDirectory is the path to the directory containing SQL migration files.
+	//
+	// Example: "db/migrations"
+	MigrationDirectory string
 }
 
 // getEnv() retrieves the value of the environment variable identified by key. If the
@@ -89,12 +99,14 @@ func getEnvDuration(key string, fallback time.Duration) (time.Duration, error) {
 // default value is used instead.
 func LoadConfig() Config {
 	defaultCfg := Config{
-		Addr:         ":8000",
-		ReadTimeout:  defaultTimeout,
-		WriteTimeout: defaultTimeout,
-		IdleTimeout:  defaultTimeout,
-		LogLevel:     "info",
-		TokenSecret:  "super-secret-token",
+		Addr:               ":8000",
+		ReadTimeout:        defaultTimeout,
+		WriteTimeout:       defaultTimeout,
+		IdleTimeout:        defaultTimeout,
+		LogLevel:           "info",
+		TokenSecret:        "super-secret-token",
+		DatabaseURL:        "db/arthika.db",
+		MigrationDirectory: "db/migrations",
 	}
 
 	addr := getEnv("ADDR", defaultCfg.Addr)
@@ -103,13 +115,17 @@ func LoadConfig() Config {
 	idleTimeout, _ := getEnvDuration("IDLE_TIMEOUT", defaultCfg.IdleTimeout)
 	logLevel := getEnv("LOG_LEVEL", defaultCfg.LogLevel)
 	tokenSecret := getEnv("TOKEN_SECRET", defaultCfg.TokenSecret)
+	databaseURL := getEnv("DATABASE_URL", defaultCfg.DatabaseURL)
+	migrationDirectory := getEnv("MIGRATIONS_DIR", defaultCfg.MigrationDirectory)
 
 	return Config{
-		Addr:         addr,
-		ReadTimeout:  readTimeout,
-		WriteTimeout: writeTimeout,
-		IdleTimeout:  idleTimeout,
-		LogLevel:     logLevel,
-		TokenSecret:  tokenSecret,
+		Addr:               addr,
+		ReadTimeout:        readTimeout,
+		WriteTimeout:       writeTimeout,
+		IdleTimeout:        idleTimeout,
+		LogLevel:           logLevel,
+		TokenSecret:        tokenSecret,
+		DatabaseURL:        databaseURL,
+		MigrationDirectory: migrationDirectory,
 	}
 }
