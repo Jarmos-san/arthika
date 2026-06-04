@@ -11,7 +11,7 @@ import (
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 
-	"github.com/Jarmos-san/arthika/server/internal/domain"
+	"github.com/Jarmos-san/arthika/server/internal/db"
 	"github.com/Jarmos-san/arthika/server/internal/dto"
 	"github.com/Jarmos-san/arthika/server/internal/repository"
 )
@@ -26,7 +26,7 @@ type UserService interface {
 	GetUser() (User, error)
 	CreateUser(
 		ctx context.Context,
-		name, email, password string,
+		username, email, password string,
 	) (dto.CreateUser, error)
 }
 
@@ -52,7 +52,7 @@ func (s *Service) GetUser() (User, error) {
 // CreateUser registers a new user and returns the created user DTO.
 func (s *Service) CreateUser(
 	ctx context.Context,
-	name, email, password string,
+	username, email, password string,
 ) (dto.CreateUser, error) {
 	userID := uuid.NewString()
 
@@ -61,9 +61,9 @@ func (s *Service) CreateUser(
 		return dto.CreateUser{}, fmt.Errorf("failed to hash password: %w", err)
 	}
 
-	user := domain.User{
+	user := db.User{
 		ID:           userID,
-		Username:     name,
+		Username:     username,
 		Email:        email,
 		PasswordHash: string(hash),
 	}
@@ -75,7 +75,7 @@ func (s *Service) CreateUser(
 
 	return dto.CreateUser{
 		ID:           userID,
-		Name:         name,
+		Username:     username,
 		Email:        email,
 		PasswordHash: string(hash),
 	}, nil

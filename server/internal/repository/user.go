@@ -5,42 +5,32 @@ package repository
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 
-	"github.com/Jarmos-san/arthika/server/internal/domain"
+	"github.com/Jarmos-san/arthika/server/internal/db"
 )
 
 // UserRepository defines persistence operations for users.
 type UserRepository interface {
-	Create(ctx context.Context, user domain.User) error
-	FindByEmail(ctx context.Context, email string) (domain.User, error)
+	Create(ctx context.Context, user db.User) error
+	FindByEmail(ctx context.Context, email string) (db.User, error)
 }
 
 // UserRepo is the concrete SQLite-backed implementation of UserRepository.
 type UserRepo struct {
-	db *sql.DB
+	q *db.Queries
 }
 
 // NewUserRepository creates a new UserRepo backed by a SQLite database.
-func NewUserRepository(db *sql.DB) *UserRepo {
-	return &UserRepo{db: db}
+func NewUserRepository(dbtx db.DBTX) *UserRepo {
+	return &UserRepo{q: db.New(dbtx)}
 }
 
 // Create inserts a new user into the database.
 //
 // It returns an error if the insert fails (e.g. duplicate username or email).
-func (r *UserRepo) Create(ctx context.Context, user domain.User) error {
-	query := `INSERT INTO users (id, username, email, password_hash) VALUES (?, ?, ?, ?)`
-
-	_, err := r.db.ExecContext(
-		ctx,
-		query,
-		user.ID,
-		user.Username,
-		user.Email,
-		user.PasswordHash,
-	)
+func (r *UserRepo) Create(ctx context.Context, user db.User) error {
+	err := r.q.CreateUser(ctx, db.CreateUserParams(user))
 	if err != nil {
 		return fmt.Errorf("insert user: %w", err)
 	}
@@ -51,16 +41,10 @@ func (r *UserRepo) Create(ctx context.Context, user domain.User) error {
 // FindByEmail retrieves a user by their email address.
 //
 // It returns the user or an error if the email is not found.
-func (r *UserRepo) FindByEmail(ctx context.Context, email string) (domain.User, error) {
-	query := `SELECT id, username, email, password_hash FROM users WHERE email = ?`
-
-	row := r.db.QueryRowContext(ctx, query, email)
-
-	var user domain.User
-
-	err := row.Scan(&user.ID, &user.Username, &user.Email, &user.PasswordHash)
+func (r *UserRepo) FindByEmail(ctx context.Context, email string) (db.User, error) {
+	user, err := r.q.FindUserByEmail(ctx, email)
 	if err != nil {
-		return domain.User{}, fmt.Errorf("find user by email: %w", err)
+		return db.User{}, fmt.Errorf("find user by email: %w", err)
 	}
 
 	return user, nil

@@ -197,7 +197,7 @@ func (u UserHandler) CreateUser( //nolint:funlen
 	u.logger.Info(
 		"successfully created new user",
 		slog.String("id", resp.ID),
-		slog.String("username", resp.Name),
+		slog.String("username", resp.Username),
 		slog.String("password", resp.PasswordHash),
 	)
 }
