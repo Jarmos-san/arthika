@@ -13,11 +13,10 @@ import (
 	"log/slog"
 	"net/http"
 
+	"github.com/Jarmos-san/arthika/server/internal/config"
 	migrate "github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/sqlite3" // Register SQLite3 driver.
 	_ "github.com/golang-migrate/migrate/v4/source/file"      // Register file source.
-
-	"github.com/Jarmos-san/arthika/server/internal/config"
 )
 
 // Application represents the main Application container.

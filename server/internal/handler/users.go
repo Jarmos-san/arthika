@@ -18,10 +18,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/google/uuid"
-
 	"github.com/Jarmos-san/arthika/server/internal/dto"
 	"github.com/Jarmos-san/arthika/server/internal/service"
+	"github.com/google/uuid"
 )
 
 const errInternalServer = "Internal Server Error"

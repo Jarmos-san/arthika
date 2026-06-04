@@ -8,12 +8,10 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/Jarmos-san/arthika/server/internal/db"
+	"github.com/Jarmos-san/arthika/server/internal/repository"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
-
-	"github.com/Jarmos-san/arthika/server/internal/db"
-	"github.com/Jarmos-san/arthika/server/internal/dto"
-	"github.com/Jarmos-san/arthika/server/internal/repository"
 )
 
 // User represents a user entity returned by the service layer.
@@ -27,7 +25,7 @@ type UserService interface {
 	CreateUser(
 		ctx context.Context,
 		username, email, password string,
-	) (dto.CreateUser, error)
+	) (db.User, error)
 }
 
 // Service is the concrete implementation of UserService.
@@ -53,12 +51,12 @@ func (s *Service) GetUser() (User, error) {
 func (s *Service) CreateUser(
 	ctx context.Context,
 	username, email, password string,
-) (dto.CreateUser, error) {
+) (db.User, error) {
 	userID := uuid.NewString()
 
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
-		return dto.CreateUser{}, fmt.Errorf("failed to hash password: %w", err)
+		return db.User{}, fmt.Errorf("failed to hash password: %w", err)
 	}
 
 	user := db.User{
@@ -70,13 +68,8 @@ func (s *Service) CreateUser(
 
 	err = s.Repo.Create(ctx, user)
 	if err != nil {
-		return dto.CreateUser{}, fmt.Errorf("failed to save user: %w", err)
+		return db.User{}, fmt.Errorf("failed to save user: %w", err)
 	}
 
-	return dto.CreateUser{
-		ID:           userID,
-		Username:     username,
-		Email:        email,
-		PasswordHash: string(hash),
-	}, nil
+	return user, nil
 }
