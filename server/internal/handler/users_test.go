@@ -41,8 +41,8 @@ func (m mockUserService) GetUser() (service.User, error) {
 }
 
 // CreateUser is a stub that satisfies the service interface.
-func (m mockUserService) CreateUser(_ string, _ string) (dto.CreateUser, error) {
-	return dto.CreateUser{}, nil
+func (m mockUserService) CreateUser(_ context.Context, _, _, _ string) (dto.CreateUser, error) {
+	return dto.CreateUser{}, nil //nolint:exhaustruct
 }
 
 // TestGetUser_Success verifies the happy-path behaviour of the handler.
