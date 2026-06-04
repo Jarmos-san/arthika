@@ -24,6 +24,8 @@ import (
 	"github.com/Jarmos-san/arthika/server/internal/service"
 )
 
+const errInternalServer = "Internal Server Error"
+
 // UserHandler handles HTTP requests related to user resources.
 //
 // UserHandler acts as the transport layer for user-related endpoints. It delegates
@@ -61,8 +63,8 @@ type UserResponse struct {
 
 // GetUser handles HTTP GET requests for retrieving a user.
 //
-// It invokes the underlying UserService to fetch user data and returns a JSON response
-// to the client.
+// It invokes the underlying UserService to fetch user data and returns a JSON
+// response to the client.
 //
 // Success Response:
 //   - Status: 200 OK
@@ -71,16 +73,8 @@ type UserResponse struct {
 //
 // Error Response:
 //   - Status: 500 Internal Server Error
-//   - Body: plain text error message
-//
-// Notes:
-//   - The method uses a value receiver; this is acceptable since the handler
-//     struct contains only references. Pointer receivers are still preferred
-//     for consistency across handler methods.
-//   - JSON encoding errors are logged but cannot alter the response once headers
-//     have been written.
-//   - A new logger instance is created during encoding failure, which is
-//     inefficient and should be avoided in favor of the injected logger.
+//   - Content-Type: application/vnd.api+json
+//   - Body: JSON:API error document
 func (u UserHandler) GetUser(writer http.ResponseWriter, _ *http.Request) {
 	user, serviceErr := u.service.GetUser()
 	if serviceErr != nil {
@@ -88,7 +82,16 @@ func (u UserHandler) GetUser(writer http.ResponseWriter, _ *http.Request) {
 			"failed to fetch user",
 			slog.String("error", serviceErr.Error()),
 		)
-		http.Error(writer, "internal server error", http.StatusInternalServerError)
+
+		errResp := dto.NewErrorDocument([]dto.ErrorObject{
+			{ //nolint:exhaustruct
+				Status: errInternalServer,
+				Code:   strconv.Itoa(http.StatusInternalServerError),
+				Title:  "Failed to Fetch User",
+				Detail: "An unexpected error occurred while fetching the user.",
+			},
+		})
+		writeJSONResponse(writer, errResp, http.StatusInternalServerError, u.logger)
 
 		return
 	}
@@ -120,7 +123,15 @@ func (u UserHandler) CreateUser( //nolint:funlen
 	if formErr != nil {
 		u.logger.Error("failed to parse form", slog.String("error", formErr.Error()))
 
-		http.Error(writer, "form parsing failed", http.StatusInternalServerError)
+		errResp := dto.NewErrorDocument([]dto.ErrorObject{
+			{ //nolint:exhaustruct
+				Status: errInternalServer,
+				Code:   strconv.Itoa(http.StatusInternalServerError),
+				Title:  "Form Parsing Failed",
+				Detail: "Unable to parse the request form data.",
+			},
+		})
+		writeJSONResponse(writer, errResp, http.StatusInternalServerError, u.logger)
 
 		return
 	}
@@ -132,10 +143,11 @@ func (u UserHandler) CreateUser( //nolint:funlen
 	if username == "" {
 		u.logger.Error("missing required field", slog.String("name", "username"))
 
-		http.Error(
-			writer,
-			"missing required field: 'username'",
-			http.StatusUnprocessableEntity,
+		errResp := dto.NewErrorDocument(
+			[]dto.ErrorObject{validationError("username")},
+		)
+		writeJSONResponse(
+			writer, errResp, http.StatusUnprocessableEntity, u.logger,
 		)
 
 		return
@@ -144,10 +156,11 @@ func (u UserHandler) CreateUser( //nolint:funlen
 	if email == "" {
 		u.logger.Error("missing required field", slog.String("name", "email"))
 
-		http.Error(
-			writer,
-			"missing required field: 'email'",
-			http.StatusUnprocessableEntity,
+		errResp := dto.NewErrorDocument(
+			[]dto.ErrorObject{validationError("email")},
+		)
+		writeJSONResponse(
+			writer, errResp, http.StatusUnprocessableEntity, u.logger,
 		)
 
 		return
@@ -156,10 +169,11 @@ func (u UserHandler) CreateUser( //nolint:funlen
 	if password == "" {
 		u.logger.Error("missing required field", slog.String("name", "password"))
 
-		http.Error(
-			writer,
-			"missing required field: 'password'",
-			http.StatusUnprocessableEntity,
+		errResp := dto.NewErrorDocument(
+			[]dto.ErrorObject{validationError("password")},
+		)
+		writeJSONResponse(
+			writer, errResp, http.StatusUnprocessableEntity, u.logger,
 		)
 
 		return
@@ -172,9 +186,21 @@ func (u UserHandler) CreateUser( //nolint:funlen
 		password,
 	)
 	if serviceErr != nil {
-		u.logger.Error("failed to create user")
+		u.logger.Error("failed to create user",
+			slog.String("error", serviceErr.Error()),
+		)
 
-		http.Error(writer, "internal server error", http.StatusInternalServerError)
+		errResp := dto.NewErrorDocument([]dto.ErrorObject{
+			{ //nolint:exhaustruct
+				Status: errInternalServer,
+				Code:   strconv.Itoa(http.StatusInternalServerError),
+				Title:  "Failed to Create User",
+				Detail: "An unexpected error occurred while creating the user.",
+			},
+		})
+		writeJSONResponse(
+			writer, errResp, http.StatusInternalServerError, u.logger,
+		)
 
 		return
 	}
@@ -189,7 +215,17 @@ func (u UserHandler) CreateUser( //nolint:funlen
 			slog.String("error", encodingErr.Error()),
 		)
 
-		http.Error(writer, "internal server error", http.StatusInternalServerError)
+		errResp := dto.NewErrorDocument([]dto.ErrorObject{
+			{ //nolint:exhaustruct
+				Status: errInternalServer,
+				Code:   strconv.Itoa(http.StatusInternalServerError),
+				Title:  "JSON Encoding Failed",
+				Detail: "An unexpected error occurred while encoding the response.",
+			},
+		})
+		writeJSONResponse(
+			writer, errResp, http.StatusInternalServerError, u.logger,
+		)
 
 		return
 	}
@@ -198,7 +234,6 @@ func (u UserHandler) CreateUser( //nolint:funlen
 		"successfully created new user",
 		slog.String("id", resp.ID),
 		slog.String("username", resp.Username),
-		slog.String("password", resp.PasswordHash),
 	)
 }
 
@@ -259,7 +294,7 @@ func (u UserHandler) LoginUser(writer http.ResponseWriter, request *http.Request
 		errObject := []dto.ErrorObject{
 			{ //nolint:exhaustruct
 				Code:   strconv.Itoa(http.StatusInternalServerError),
-				Status: "Internal Server Error",
+				Status: errInternalServer,
 				Title:  "Failed to Generate JWT",
 				Detail: tokenErr.Error(),
 			},
