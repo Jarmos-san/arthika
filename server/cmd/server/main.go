@@ -20,6 +20,7 @@ import (
 	"github.com/Jarmos-san/arthika/server/internal/dto"
 	"github.com/Jarmos-san/arthika/server/internal/handler"
 	"github.com/Jarmos-san/arthika/server/internal/logger"
+	"github.com/Jarmos-san/arthika/server/internal/repository"
 	"github.com/Jarmos-san/arthika/server/internal/service"
 	chi "github.com/go-chi/chi/v5"
 	chimw "github.com/go-chi/chi/v5/middleware"
@@ -52,12 +53,23 @@ func main() { //nolint:funlen
 
 	logger := logger.New(cfg.LogLevel)
 
-	// Initialise the Chi router and register routes.
+	// Initialise the Chi router.
 	router := chi.NewRouter()
 	router.Use(chimw.Logger, chimw.Recoverer)
 
-	// Register the routes and their handlers
-	userService := service.NewUserService()
+	// Construct the app container (opens DB, runs migrations).
+	app, err := app.New(cfg, router, logger)
+	if err != nil {
+		logger.Error(
+			"failed to initialize application",
+			slog.String("error", err.Error()),
+		)
+
+		return
+	}
+
+	userRepo := repository.NewUserRepository(app.DB)
+	userService := service.NewUserService(userRepo)
 	userHandler := handler.NewUserHandler(userService, logger)
 
 	router.Get("/users/", userHandler.GetUser)
@@ -88,17 +100,6 @@ func main() { //nolint:funlen
 			return
 		}
 	})
-
-	// Construct the app container with configurations and the handler.
-	app, err := app.New(cfg, router, logger)
-	if err != nil {
-		logger.Error(
-			"failed to initialize application",
-			slog.String("error", err.Error()),
-		)
-
-		return
-	}
 
 	// Create a context that is cancelled on interrupt or kill signals.
 	ctx, stop := signal.NotifyContext(
