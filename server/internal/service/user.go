@@ -9,7 +9,6 @@ import (
 	"fmt"
 
 	"github.com/Jarmos-san/arthika/server/internal/db"
-	"github.com/Jarmos-san/arthika/server/internal/repository"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -30,12 +29,12 @@ type UserService interface {
 
 // Service is the concrete implementation of UserService.
 type Service struct {
-	Repo repository.UserRepository
+	q db.Querier
 }
 
-// NewUserService creates a new Service backed by the given repository.
-func NewUserService(repo repository.UserRepository) *Service {
-	return &Service{Repo: repo}
+// NewUserService creates a new Service backed by the given query interface.
+func NewUserService(q db.Querier) *Service {
+	return &Service{q: q}
 }
 
 // GetUser returns a static user.
@@ -59,17 +58,22 @@ func (s *Service) CreateUser(
 		return db.User{}, fmt.Errorf("failed to hash password: %w", err)
 	}
 
-	user := db.User{
+	params := db.CreateUserParams{
 		ID:           userID,
 		Username:     username,
 		Email:        email,
 		PasswordHash: string(hash),
 	}
 
-	err = s.Repo.Create(ctx, user)
+	err = s.q.CreateUser(ctx, params)
 	if err != nil {
 		return db.User{}, fmt.Errorf("failed to save user: %w", err)
 	}
 
-	return user, nil
+	return db.User{
+		ID:           userID,
+		Username:     username,
+		Email:        email,
+		PasswordHash: string(hash),
+	}, nil
 }
