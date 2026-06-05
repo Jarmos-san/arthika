@@ -8,6 +8,7 @@ sql:
         package: "db"
         out: "internal/db/"
         emit_json_tags: true
+        emit_interface: true
         json_tags_case_style: "camel"
         overrides:
           - column: "users.password_hash"
