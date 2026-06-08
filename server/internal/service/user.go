@@ -8,7 +8,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/Jarmos-san/arthika/server/internal/db"
+	"github.com/Jarmos-san/arthika/server/internal/repository"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -24,16 +24,16 @@ type UserService interface {
 	CreateUser(
 		ctx context.Context,
 		username, email, password string,
-	) (db.User, error)
+	) (repository.User, error)
 }
 
 // Service is the concrete implementation of UserService.
 type Service struct {
-	q db.Querier
+	q repository.Querier
 }
 
 // NewUserService creates a new Service backed by the given query interface.
-func NewUserService(q db.Querier) *Service {
+func NewUserService(q repository.Querier) *Service {
 	return &Service{q: q}
 }
 
@@ -50,15 +50,15 @@ func (s *Service) GetUser() (User, error) {
 func (s *Service) CreateUser(
 	ctx context.Context,
 	username, email, password string,
-) (db.User, error) {
+) (repository.User, error) {
 	userID := uuid.NewString()
 
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
-		return db.User{}, fmt.Errorf("failed to hash password: %w", err)
+		return repository.User{}, fmt.Errorf("failed to hash password: %w", err)
 	}
 
-	params := db.CreateUserParams{
+	params := repository.CreateUserParams{
 		ID:           userID,
 		Username:     username,
 		Email:        email,
@@ -67,10 +67,10 @@ func (s *Service) CreateUser(
 
 	err = s.q.CreateUser(ctx, params)
 	if err != nil {
-		return db.User{}, fmt.Errorf("failed to save user: %w", err)
+		return repository.User{}, fmt.Errorf("failed to save user: %w", err)
 	}
 
-	return db.User{
+	return repository.User{
 		ID:           userID,
 		Username:     username,
 		Email:        email,

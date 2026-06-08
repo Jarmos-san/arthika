@@ -32,7 +32,7 @@ tasks:
       - "db/query/**/*.sql"
       - "db/migrations/**/*.sql"
     generates:
-      - "internal/db/**/*.go"
+      - "internal/repository/**/*.go"
     preconditions:
       - sh: which sqlc
         msg: >-

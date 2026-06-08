@@ -17,10 +17,10 @@ import (
 
 	"github.com/Jarmos-san/arthika/server/internal/app"
 	"github.com/Jarmos-san/arthika/server/internal/config"
-	"github.com/Jarmos-san/arthika/server/internal/db"
 	"github.com/Jarmos-san/arthika/server/internal/dto"
 	"github.com/Jarmos-san/arthika/server/internal/handler"
 	"github.com/Jarmos-san/arthika/server/internal/logger"
+	"github.com/Jarmos-san/arthika/server/internal/repository"
 	"github.com/Jarmos-san/arthika/server/internal/service"
 	chi "github.com/go-chi/chi/v5"
 	chimw "github.com/go-chi/chi/v5/middleware"
@@ -68,7 +68,7 @@ func main() { //nolint:funlen
 		return
 	}
 
-	queries := db.New(app.DB)
+	queries := repository.New(app.DB)
 	userService := service.NewUserService(queries)
 	userHandler := handler.NewUserHandler(userService, logger)
 

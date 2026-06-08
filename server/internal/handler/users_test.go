@@ -17,8 +17,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/Jarmos-san/arthika/server/internal/db"
 	"github.com/Jarmos-san/arthika/server/internal/handler"
+	"github.com/Jarmos-san/arthika/server/internal/repository"
 	"github.com/Jarmos-san/arthika/server/internal/service"
 )
 
@@ -41,8 +41,8 @@ func (m mockUserService) GetUser() (service.User, error) {
 }
 
 // CreateUser is a stub that satisfies the service interface.
-func (m mockUserService) CreateUser(_ context.Context, _, _, _ string) (db.User, error) {
-	return db.User{}, nil //nolint:exhaustruct
+func (m mockUserService) CreateUser(_ context.Context, _, _, _ string) (repository.User, error) {
+	return repository.User{}, nil //nolint:exhaustruct
 }
 
 // TestGetUser_Success verifies the happy-path behaviour of the handler.
