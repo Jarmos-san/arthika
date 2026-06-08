@@ -5,8 +5,8 @@
 package repository
 
 type User struct {
-	ID           string `json:"id"`
-	Username     string `json:"username"`
-	Email        string `json:"email"`
+	ID           string
+	Username     string
+	Email        string
 	PasswordHash string `json:"-"`
 }

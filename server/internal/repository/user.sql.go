@@ -15,12 +15,16 @@ VALUES (?, ?, ?, ?)
 `
 
 type CreateUserParams struct {
-	ID           string `json:"id"`
-	Username     string `json:"username"`
-	Email        string `json:"email"`
+	ID           string
+	Username     string
+	Email        string
 	PasswordHash string `json:"-"`
 }
 
+// CreateUser
+//
+//	INSERT INTO users (id, username, email, password_hash)
+//	VALUES (?, ?, ?, ?)
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) error {
 	_, err := q.db.ExecContext(ctx, createUser,
 		arg.ID,
@@ -37,6 +41,11 @@ FROM users
 WHERE email = ? LIMIT 1
 `
 
+// FindUserByEmail
+//
+//	SELECT id, username, email, password_hash
+//	FROM users
+//	WHERE email = ? LIMIT 1
 func (q *Queries) FindUserByEmail(ctx context.Context, email string) (User, error) {
 	row := q.db.QueryRowContext(ctx, findUserByEmail, email)
 	var i User
