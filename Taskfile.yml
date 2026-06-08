@@ -18,6 +18,27 @@ tasks:
     dir: server
     cmd: golangci-lint run ./...
 
+  generate:
+    desc: Run all code generators
+    cmds:
+      - task: sqlc
+
+  sqlc:
+    desc: Generate Go code from SQL queries using sqlc
+    dir: server
+    cmd: sqlc generate
+    sources:
+      - "sqlc.yaml"
+      - "db/query/**/*.sql"
+      - "db/migrations/**/*.sql"
+    generates:
+      - "internal/repository/**/*.go"
+    preconditions:
+      - sh: which sqlc
+        msg: >-
+          sqlc not found. Install with: go install
+          github.com/sqlc-dev/sqlc/cmd/sqlc@latest
+
   migrate:up:
     desc: Run pending up migrations
     dir: server

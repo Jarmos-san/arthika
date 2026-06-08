@@ -90,7 +90,8 @@ func writeJSONResponse(
 	writer.Header().Set("Content-Type", "application/vnd.api+json")
 	writer.WriteHeader(statusCode)
 
-	if err := json.NewEncoder(writer).Encode(payload); err != nil {
+	err := json.NewEncoder(writer).Encode(payload)
+	if err != nil {
 		logger.Error("failed to encode JSON", slog.Any("error", err))
 	}
 }

@@ -11,6 +11,7 @@ func TestJSONAPI_Error_Validate(t *testing.T) {
 
 	t.Run("valid with title", func(t *testing.T) {
 		t.Parallel()
+
 		e := dto.ErrorObject{
 			Title: "Invalid request",
 		}

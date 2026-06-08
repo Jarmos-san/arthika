@@ -68,8 +68,8 @@ func main() { //nolint:funlen
 		return
 	}
 
-	userRepo := repository.NewUserRepository(app.DB)
-	userService := service.NewUserService(userRepo)
+	queries := repository.New(app.DB)
+	userService := service.NewUserService(queries)
 	userHandler := handler.NewUserHandler(userService, logger)
 
 	router.Get("/users/", userHandler.GetUser)
