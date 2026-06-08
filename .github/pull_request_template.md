@@ -1,21 +1,7 @@
-## Summary
+## Description
 
 <!-- Describe what this PR changes and why. -->
 
-## Type of Change
+## Modification
 
-- [ ] Bug fix
-- [ ] New feature
-- [ ] Documentation update
-- [ ] Refactor / chore
-
-## Testing
-
-- [ ] `go test ./...` passes
-- [ ] `task lint` passes
-
-## Checklist
-
-- [ ] Code follows project conventions
-- [ ] Tests added / updated
-- [ ] Documentation updated
+<!-- Provide a detailed list of all changes/updates introduced with the PR -->
