@@ -22,6 +22,7 @@ tasks:
     desc: Run all code generators
     cmds:
       - task: sqlc
+      - task: oapi-codegen
 
   sqlc:
     desc: Generate Go code from SQL queries using sqlc
@@ -38,6 +39,21 @@ tasks:
         msg: >-
           sqlc not found. Install with: go install
           github.com/sqlc-dev/sqlc/cmd/sqlc@latest
+
+  oapi-codegen:
+    desc: Generate Go code from OpenAPI spec using oapi-codegen
+    dir: server
+    cmd: oapi-codegen --config=oapi-codegen.yaml api/openapi.yaml
+    sources:
+      - "api/openapi.yaml"
+      - "oapi-codegen.yaml"
+    generates:
+      - "api/arthika.gen.go"
+    preconditions:
+      - sh: which oapi-codegen
+        msg: >-
+          oapi-codegen not found. Install with: go install
+          github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@latest
 
   migrate:up:
     desc: Run pending up migrations
