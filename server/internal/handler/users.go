@@ -12,37 +12,19 @@
 package handler
 
 import (
-	"encoding/json"
 	"log/slog"
 	"net/http"
-	"strconv"
 
-	"github.com/Jarmos-san/arthika/server/internal/dto"
 	"github.com/Jarmos-san/arthika/server/internal/service"
 )
 
-const errInternalServer = "Internal Server Error"
-
 // UserHandler handles HTTP requests related to user resources.
-//
-// UserHandler acts as the transport layer for user-related endpoints. It delegates
-// business logic to the injected UserService and is responsible for constructing HTTP
-// responses based on the results.
-//
-// The handler is safe for concurrent use provided its dependencies are also
-// concurrency-safe.
 type UserHandler struct {
 	service service.UserService
 	logger  *slog.Logger
 }
 
 // NewUserHandler constructs a new UserHandler with its required dependencies.
-//
-// Parameters:
-//   - service: provides user-related business logic
-//   - logger:  used for structured logging within the handler
-//
-// The returned handler is ready to be registered with an HTTP router.
 func NewUserHandler(service service.UserService, logger *slog.Logger) *UserHandler {
 	return &UserHandler{
 		service: service,
@@ -50,7 +32,7 @@ func NewUserHandler(service service.UserService, logger *slog.Logger) *UserHandl
 	}
 }
 
-// CreateUser ...
+// CreateUser handles POST /users/register.
 func (u UserHandler) CreateUser( //nolint:funlen
 	writer http.ResponseWriter,
 	request *http.Request,
@@ -61,15 +43,13 @@ func (u UserHandler) CreateUser( //nolint:funlen
 	if formErr != nil {
 		u.logger.Error("failed to parse form", slog.String("error", formErr.Error()))
 
-		errResp := dto.NewErrorDocument([]dto.ErrorObject{
-			{ //nolint:exhaustruct
-				Status: errInternalServer,
-				Code:   strconv.Itoa(http.StatusInternalServerError),
-				Title:  "Form Parsing Failed",
-				Detail: "Unable to parse the request form data.",
+		writeJSONError(writer, []map[string]any{
+			{
+				errKeyStatus: http.StatusInternalServerError,
+				errKeyTitle:  "Form Parsing Failed",
+				errKeyDetail: "Unable to parse the request form data.",
 			},
-		})
-		writeJSONResponse(writer, errResp, http.StatusInternalServerError, u.logger)
+		}, http.StatusInternalServerError, u.logger)
 
 		return
 	}
@@ -81,11 +61,9 @@ func (u UserHandler) CreateUser( //nolint:funlen
 	if username == "" {
 		u.logger.Error("missing required field", slog.String("name", "username"))
 
-		errResp := dto.NewErrorDocument(
-			[]dto.ErrorObject{validationError("username")},
-		)
-		writeJSONResponse(
-			writer, errResp, http.StatusUnprocessableEntity, u.logger,
+		writeJSONError(
+			writer, []map[string]any{validationError("username")},
+			http.StatusUnprocessableEntity, u.logger,
 		)
 
 		return
@@ -94,11 +72,9 @@ func (u UserHandler) CreateUser( //nolint:funlen
 	if email == "" {
 		u.logger.Error("missing required field", slog.String("name", "email"))
 
-		errResp := dto.NewErrorDocument(
-			[]dto.ErrorObject{validationError("email")},
-		)
-		writeJSONResponse(
-			writer, errResp, http.StatusUnprocessableEntity, u.logger,
+		writeJSONError(
+			writer, []map[string]any{validationError("email")},
+			http.StatusUnprocessableEntity, u.logger,
 		)
 
 		return
@@ -107,11 +83,9 @@ func (u UserHandler) CreateUser( //nolint:funlen
 	if password == "" {
 		u.logger.Error("missing required field", slog.String("name", "password"))
 
-		errResp := dto.NewErrorDocument(
-			[]dto.ErrorObject{validationError("password")},
-		)
-		writeJSONResponse(
-			writer, errResp, http.StatusUnprocessableEntity, u.logger,
+		writeJSONError(
+			writer, []map[string]any{validationError("password")},
+			http.StatusUnprocessableEntity, u.logger,
 		)
 
 		return
@@ -128,45 +102,22 @@ func (u UserHandler) CreateUser( //nolint:funlen
 			slog.String("error", serviceErr.Error()),
 		)
 
-		errResp := dto.NewErrorDocument([]dto.ErrorObject{
-			{ //nolint:exhaustruct
-				Status: errInternalServer,
-				Code:   strconv.Itoa(http.StatusInternalServerError),
-				Title:  "Failed to Create User",
-				Detail: "An unexpected error occurred while creating the user.",
+		writeJSONError(writer, []map[string]any{
+			{
+				errKeyStatus: http.StatusInternalServerError,
+				errKeyTitle:  "Failed to Create User",
+				errKeyDetail: "An unexpected error occurred while creating the user.",
 			},
-		})
-		writeJSONResponse(
-			writer, errResp, http.StatusInternalServerError, u.logger,
-		)
+		}, http.StatusInternalServerError, u.logger)
 
 		return
 	}
 
-	writer.Header().Set("Content-Type", "application/vnd.api+json")
-	writer.WriteHeader(http.StatusCreated)
-
-	encodingErr := json.NewEncoder(writer).Encode(resp)
-	if encodingErr != nil {
-		u.logger.Error(
-			"JSON encoding failed",
-			slog.String("error", encodingErr.Error()),
-		)
-
-		errResp := dto.NewErrorDocument([]dto.ErrorObject{
-			{ //nolint:exhaustruct
-				Status: errInternalServer,
-				Code:   strconv.Itoa(http.StatusInternalServerError),
-				Title:  "JSON Encoding Failed",
-				Detail: "An unexpected error occurred while encoding the response.",
-			},
-		})
-		writeJSONResponse(
-			writer, errResp, http.StatusInternalServerError, u.logger,
-		)
-
-		return
-	}
+	writeJSONResponse(writer, map[string]any{
+		"id":       resp.ID,
+		"username": resp.Username,
+		"email":    resp.Email,
+	}, http.StatusCreated, u.logger)
 
 	u.logger.Info(
 		"successfully created new user",

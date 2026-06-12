@@ -25,7 +25,7 @@ over their data, including optional anonymous public sharing.
 | Backend    | Go + Chi router                        |
 | Database   | SQLite (via golang-migrate + sqlc)     |
 | Frontend   | Nuxt.js (Vue 3) — *not yet implemented* |
-| API format | JSON:API (`application/vnd.api+json`)  |
+| API format | JSON (`application/json`)  |
 
 ## Core domains
 
@@ -180,7 +180,7 @@ Client                          chi Router                     handler.UserHandl
 
 | Path                  | Reason                                  |
 | --------------------- | --------------------------------------- |
-| `internal/dto/*`      | Replaced by `internal/api/` generated types |
+| `internal/dto/*`      | *Removed — was replaced by plain `map[string]any` responses* |
 
 ### These get **refactored**:
 
@@ -225,7 +225,7 @@ Remaining route: `POST /users/register`
 - [ ] Refactor `internal/service/user.go` — update interface to use generated types
 - [ ] Refactor `internal/handler/users.go` — implement generated `ServerInterface`
 - [ ] Refactor `cmd/server/main.go` — use `HandlerFromMux` for chi route registration
-- [ ] Delete `internal/dto/` package entirely
+- [x] Delete `internal/dto/` package entirely
 - [ ] Update tests for generated types
 - [ ] Remove unused dependencies from go.mod
 - [ ] Run `task lint` and `go test ./...` to verify
