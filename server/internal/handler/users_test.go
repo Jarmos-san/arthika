@@ -1,12 +1,3 @@
-// Package handler_test contains black-box tests for HTTP handler.
-//
-// These tests validate the behaviour of the transport layer in isolation by:
-//   - mocking service dependencies
-//   - issuing HTTP requests using httptest utilities
-//   - asserting on HTTP responses (status, headers, body)
-//
-// The goal is NOT to test business logic, but to ensure correct interaction
-// between the handler and its dependencies, along with proper HTTP semantics.
 package handler_test
 
 import (
@@ -15,84 +6,67 @@ import (
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
+	"github.com/Jarmos-san/arthika/server/api"
 	"github.com/Jarmos-san/arthika/server/internal/handler"
-	"github.com/Jarmos-san/arthika/server/internal/repository"
-	"github.com/Jarmos-san/arthika/server/internal/service"
 )
 
-// mockUserService is a test double that implements the UserService interface.
-//
-// It allows us to:
-//   - control the output of the service layer
-//   - simulate both success and failure scenarios deterministically
+const testContentTypeJSON = "application/json"
+
 type mockUserService struct {
-	user service.User
-	err  error
+	user      api.User
+	createErr error
+	token     api.TokenResponse
+	loginErr  error
 }
 
-// GetUser returns preconfigured values for testing.
-//
-// NOTE: This signature must match the service interface exactly.
-// If the real service uses context, this should too.
-func (m mockUserService) GetUser() (service.User, error) {
-	return m.user, m.err
+func (m mockUserService) GetUser() api.User {
+	return m.user
 }
 
-// CreateUser is a stub that satisfies the service interface.
-func (m mockUserService) CreateUser(_ context.Context, _, _, _ string) (repository.User, error) {
-	return repository.User{}, nil //nolint:exhaustruct
+func (m mockUserService) CreateUser(_ context.Context, _, _, _ string) (api.User, error) {
+	return api.User{}, m.createErr
 }
 
-// TestGetUser_Success verifies the happy-path behaviour of the handler.
-//
-// It ensures that:
-//   - the handler returns HTTP 200
-//   - the correct Content-Type header is set
-//   - the response body is valid JSON
-//   - the payload matches expected data from the service
+func (m mockUserService) Login(_ context.Context, _, _ string) (api.TokenResponse, error) {
+	return m.token, m.loginErr
+}
+
 func TestGetUser_Success(t *testing.T) {
 	t.Parallel()
 
-	// Arrange: mock service is returning a valid user.
 	mockSvc := mockUserService{ //nolint:exhaustruct
-		user: service.User{
+		user: api.User{
 			Name: "Test User",
 		},
 	}
 
 	logger := slog.Default()
 
-	// Inject mock dependencies into the handler.
-	userHandler := handler.NewUserHandler(mockSvc, logger)
+	userHandler := handler.NewHandler(mockSvc, logger)
 
-	// Create a test HTTP request
 	req := httptest.NewRequestWithContext(
-		context.TODO(), // context can be enriched later (timeouts, tracing, etc.)
+		context.TODO(),
 		http.MethodGet,
 		"/users/",
 		nil,
 	)
 
-	// Recorder captures the HTTP response
 	recorder := httptest.NewRecorder()
 
-	// Act: invoke handler directly
 	userHandler.GetUser(recorder, req)
 
-	// Assert: HTTP status code
 	if recorder.Code != http.StatusOK {
 		t.Fatalf("expected status %d, got %d", http.StatusOK, recorder.Code)
 	}
 
-	// Assert: Content-Type header (important for API correctness)
-	if ct := recorder.Header().Get("Content-Type"); ct != "application/vnd.api+json" {
+	if ct := recorder.Header().Get("Content-Type"); ct != testContentTypeJSON {
 		t.Fatalf("unexpected content-type: %s", ct)
 	}
 
-	// Assert: Response body structure and content
-	var resp handler.UserResponse
+	var resp api.User
 
 	err := json.NewDecoder(recorder.Body).Decode(&resp)
 	if err != nil {
@@ -104,54 +78,158 @@ func TestGetUser_Success(t *testing.T) {
 	}
 }
 
-// assertError is a simple sentinel error used to simulate failure scenarios.
 type assertError struct{}
 
-// Error implements the error interface.
 func (assertError) Error() string { return "test error" }
 
-// TestGetUser_Error verifies handler behaviour when the service returns an error.
-//
-// It ensures that:
-//   - the handler responds with HTTP 500
-//   - no successful payload is returned
-//
-// NOTE: The response body is intentionally not asserted here. That decision depends on
-// the API error format (e.g., JSON:API error objects). Such assertions will be added
-// once the error contract is formalised.
-func TestGetUser_Error(t *testing.T) {
+func TestRegisterUser_Success(t *testing.T) {
 	t.Parallel()
 
-	// Arrange: Mock service returning an error
-	mockSvc := &mockUserService{ //nolint:exhaustruct
-		err: assertError{},
+	mockSvc := mockUserService{} //nolint:exhaustruct
+
+	logger := slog.Default()
+	userHandler := handler.NewHandler(mockSvc, logger)
+
+	body := `{"username":"alice","email":"alice@example.com","password":"secret"}`
+	req := httptest.NewRequestWithContext(
+		context.TODO(),
+		http.MethodPost,
+		"/users/register",
+		strings.NewReader(body),
+	)
+	req.Header.Set("Content-Type", testContentTypeJSON)
+
+	recorder := httptest.NewRecorder()
+	userHandler.RegisterUser(recorder, req)
+
+	if recorder.Code != http.StatusCreated {
+		t.Fatalf("expected status %d, got %d", http.StatusCreated, recorder.Code)
+	}
+
+	if ct := recorder.Header().Get("Content-Type"); ct != testContentTypeJSON {
+		t.Fatalf("unexpected content-type: %s", ct)
+	}
+}
+
+func TestRegisterUser_ValidationError(t *testing.T) {
+	t.Parallel()
+
+	mockSvc := mockUserService{} //nolint:exhaustruct
+
+	logger := slog.Default()
+	userHandler := handler.NewHandler(mockSvc, logger)
+
+	body := `{"username":"","email":"a@b.com","password":"secret"}`
+	req := httptest.NewRequestWithContext(
+		context.TODO(),
+		http.MethodPost,
+		"/users/register",
+		strings.NewReader(body),
+	)
+	req.Header.Set("Content-Type", testContentTypeJSON)
+
+	recorder := httptest.NewRecorder()
+	userHandler.RegisterUser(recorder, req)
+
+	if recorder.Code != http.StatusUnprocessableEntity {
+		t.Fatalf("expected status %d, got %d", http.StatusUnprocessableEntity, recorder.Code)
+	}
+}
+
+func TestLoginUser_Success(t *testing.T) {
+	t.Parallel()
+
+	mockSvc := mockUserService{ //nolint:exhaustruct
+		token: api.TokenResponse{
+			AccessToken: "test-token",
+			TokenType:   "Bearer",
+			ExpiresIn:   3600,
+		},
 	}
 
 	logger := slog.Default()
+	userHandler := handler.NewHandler(mockSvc, logger)
 
-	// Inject mock dependencies into the handler
-	userHandler := handler.NewUserHandler(mockSvc, logger)
-
-	// Create a test HTTP request
+	body := `{"email":"alice@example.com","password":"secret"}`
 	req := httptest.NewRequestWithContext(
-		context.TODO(), // The context can be enriched in the future
-		http.MethodGet,
-		"/users/",
-		nil,
+		context.TODO(),
+		http.MethodPost,
+		"/login",
+		strings.NewReader(body),
 	)
+	req.Header.Set("Content-Type", testContentTypeJSON)
 
-	// Recorder captures the HTTP response
 	recorder := httptest.NewRecorder()
+	userHandler.LoginUser(recorder, req)
 
-	// Act: Invoke handler directly
-	userHandler.GetUser(recorder, req)
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d", http.StatusOK, recorder.Code)
+	}
 
-	// Assert: HTTP status code
-	if recorder.Code != http.StatusInternalServerError {
-		t.Fatalf(
-			"expected status %d, got %d",
-			http.StatusInternalServerError,
-			recorder.Code,
-		)
+	if ct := recorder.Header().Get("Content-Type"); ct != testContentTypeJSON {
+		t.Fatalf("unexpected content-type: %s", ct)
+	}
+
+	var resp api.TokenResponse
+
+	err := json.NewDecoder(recorder.Body).Decode(&resp)
+	if err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+
+	if resp.AccessToken != "test-token" {
+		t.Errorf("expected token %q, got %q", "test-token", resp.AccessToken)
+	}
+}
+
+func TestLoginUser_ValidationError(t *testing.T) {
+	t.Parallel()
+
+	mockSvc := mockUserService{} //nolint:exhaustruct
+
+	logger := slog.Default()
+	userHandler := handler.NewHandler(mockSvc, logger)
+
+	body := `{"email":"a@b.com","password":""}`
+	req := httptest.NewRequestWithContext(
+		context.TODO(),
+		http.MethodPost,
+		"/login",
+		strings.NewReader(body),
+	)
+	req.Header.Set("Content-Type", testContentTypeJSON)
+
+	recorder := httptest.NewRecorder()
+	userHandler.LoginUser(recorder, req)
+
+	if recorder.Code != http.StatusUnprocessableEntity {
+		t.Fatalf("expected status %d, got %d", http.StatusUnprocessableEntity, recorder.Code)
+	}
+}
+
+func TestLoginUser_InvalidCredentials(t *testing.T) {
+	t.Parallel()
+
+	mockSvc := mockUserService{ //nolint:exhaustruct
+		loginErr: assertError{},
+	}
+
+	logger := slog.Default()
+	userHandler := handler.NewHandler(mockSvc, logger)
+
+	body := `{"email":"alice@example.com","password":"wrong"}`
+	req := httptest.NewRequestWithContext(
+		context.TODO(),
+		http.MethodPost,
+		"/login",
+		strings.NewReader(body),
+	)
+	req.Header.Set("Content-Type", testContentTypeJSON)
+
+	recorder := httptest.NewRecorder()
+	userHandler.LoginUser(recorder, req)
+
+	if recorder.Code != http.StatusUnauthorized {
+		t.Fatalf("expected status %d, got %d", http.StatusUnauthorized, recorder.Code)
 	}
 }
