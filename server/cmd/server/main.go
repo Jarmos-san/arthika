@@ -7,7 +7,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"log/slog"
 	"net/http"
@@ -17,14 +16,12 @@ import (
 
 	"github.com/Jarmos-san/arthika/server/internal/app"
 	"github.com/Jarmos-san/arthika/server/internal/config"
-	"github.com/Jarmos-san/arthika/server/internal/dto"
 	"github.com/Jarmos-san/arthika/server/internal/handler"
 	"github.com/Jarmos-san/arthika/server/internal/logger"
 	"github.com/Jarmos-san/arthika/server/internal/repository"
 	"github.com/Jarmos-san/arthika/server/internal/service"
 	chi "github.com/go-chi/chi/v5"
 	chimw "github.com/go-chi/chi/v5/middleware"
-	"github.com/google/uuid"
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -47,7 +44,7 @@ const shutdownTimeout = 5 * time.Second
 //
 // The server is gracefully shutdown when an interrupt or termination signal is
 // received, allowing in-flight requests to complete wihin a timeout period.
-func main() { //nolint:funlen
+func main() {
 	// Load application configuration from environment variables.
 	cfg := config.LoadConfig()
 
@@ -72,34 +69,7 @@ func main() { //nolint:funlen
 	userService := service.NewUserService(queries)
 	userHandler := handler.NewUserHandler(userService, logger)
 
-	router.Get("/users/", userHandler.GetUser)
 	router.Post("/users/register", userHandler.CreateUser)
-	router.Post("/login", userHandler.LoginUser)
-
-	// Temporary scratch handler for experimental requirements only
-	router.Get("/scratch/", func(writer http.ResponseWriter, _ *http.Request) {
-		writer.Header().Set("Content-Type", "application/vnd.api+json")
-		writer.WriteHeader(http.StatusOK)
-
-		data := dto.ResourceObject{
-			Type: "user",
-			ID:   uuid.NewString(),
-			Attributes: map[string]any{
-				"name": "John Doe",
-			},
-			Relationships: nil,
-			Links:         nil,
-		}
-
-		newResp := dto.NewSingleDocument(data)
-
-		err := json.NewEncoder(writer).Encode(newResp)
-		if err != nil {
-			http.Error(writer, "Internal Server Error", http.StatusInternalServerError)
-
-			return
-		}
-	})
 
 	// Create a context that is cancelled on interrupt or kill signals.
 	ctx, stop := signal.NotifyContext(

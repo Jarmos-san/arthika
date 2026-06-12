@@ -7,9 +7,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/Jarmos-san/arthika/server/internal/config"
 	"github.com/Jarmos-san/arthika/server/internal/dto"
-	jwt "github.com/golang-jwt/jwt/v5"
 )
 
 // validationError creates a JSON:API compliant error object for a missing required
@@ -33,27 +31,6 @@ func validationError(field string) dto.ErrorObject {
 		Title:  "Missing Required Field",
 		Detail: fmt.Sprintf("Missing required field: '%s' cannot be empty", field),
 	}
-}
-
-// createJWT generates and signs a new JSON Web Token (JWT) using the application's
-// configured secret key.
-//
-// The JWT is signed using the HS512 signing algorithm. The secret key used for signing
-// is loaded frfom the application configuration.
-//
-// Returns:
-//
-//	string - The signed JWT.
-//	error - An error if token signing fails.
-func createJWT() (string, error) {
-	// Load the app config, required for fetching the secret key for the JWT
-	config := config.LoadConfig()
-
-	// Setup the JWT generation process
-	key := []byte(config.TokenSecret)    // Use the secret token loaded from the configs
-	t := jwt.New(jwt.SigningMethodHS512) // Use HMAC-SHA256 algorithm for token signing
-
-	return t.SignedString(key) // Create a signed JWT (or throw an error)
 }
 
 // writeJSONResponse serialises the provided payload into a JSON document and writes it

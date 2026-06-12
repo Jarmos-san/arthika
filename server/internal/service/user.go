@@ -13,14 +13,8 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-// User represents a user entity returned by the service layer.
-type User struct {
-	Name string `json:"name"`
-}
-
 // UserService defines the business operations available for users.
 type UserService interface {
-	GetUser() (User, error)
 	CreateUser(
 		ctx context.Context,
 		username, email, password string,
@@ -35,15 +29,6 @@ type Service struct {
 // NewUserService creates a new Service backed by the given query interface.
 func NewUserService(q repository.Querier) *Service {
 	return &Service{q: q}
-}
-
-// GetUser returns a static user.
-//
-// This is a temporary stub until the service is fully wired.
-func (s *Service) GetUser() (User, error) {
-	return User{
-		Name: "John Doe",
-	}, nil
 }
 
 // CreateUser registers a new user and returns the created user DTO.
