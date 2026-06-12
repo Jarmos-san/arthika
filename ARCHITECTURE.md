@@ -44,7 +44,7 @@ public sharing.
 
 - **Backend:** Go + Chi router
 - **Frontend:** Nuxt.js (Vue 3) — *not yet implemented*
-- **Database:** SQLite — *not yet implemented*
+- **Database:** SQLite
 
 ### System Layout
 
@@ -53,7 +53,7 @@ Frontend (Nuxt.js)   — not yet implemented
         ↓
 Backend API (Go + Chi)
         ↓
-Database (SQLite)    — not yet implemented
+Database (SQLite)
 ```
 
 ---
@@ -65,7 +65,7 @@ Database (SQLite)    — not yet implemented
 ```
 Handler → Service → Repository → Database
 
-> **Status:** Handler and Service layers are implemented. Repository and Database layers are planned but not yet built.
+> **Status:** All layers are implemented. Repository is sqlc-generated from hand-written SQL. Database is SQLite with auto-applied migrations via golang-migrate.
 ```
 
 #### Handler Layer
@@ -100,17 +100,37 @@ cmd/
   server/
     main.go
 
+db/
+  migrations/   # SQL schema migrations (golang-migrate)
+  query/        # hand-written SQL queries (sqlc input)
+
 internal/
-  app/          # composition root, lifecycle
+  app/          # composition root, lifecycle, DB + migrations
   handler/      # HTTP transport layer
   service/      # business logic
-  repository/   # data access — not yet implemented
-  domain/       # core entities and types
+  repository/   # data access (sqlc-generated)
   dto/          # JSON:API request/response types
-  middleware/   # HTTP middleware — not yet implemented
+  middleware/   # HTTP middleware — placeholder (chi built-in Logger+Recoverer used globally)
   config/       # environment-based configuration
   logger/       # structured slog setup
 ```
+
+### Configuration
+
+Configuration is loaded from environment variables only. All fields have sensible defaults suitable for local development.
+
+| Env Var          | Config Field        | Default             |
+| ---------------- | ------------------- | ------------------- |
+| `ADDR`             | `Addr`                | `:8000`               |
+| `READ_TIMEOUT`     | `ReadTimeout`         | `10s`                 |
+| `WRITE_TIMEOUT`    | `WriteTimeout`        | `10s`                 |
+| `IDLE_TIMEOUT`     | `IdleTimeout`         | `10s`                 |
+| `LOG_LEVEL`        | `LogLevel`            | `info`                |
+| `TOKEN_SECRET`     | `TokenSecret`         | `super-secret-token`  |
+| `DATABASE_URL`     | `DatabaseURL`         | `db/arthika.db`       |
+| `MIGRATIONS_DIR`   | `MigrationDirectory`  | `db/migrations`       |
+
+Invalid duration values fall back to defaults without failing startup.
 
 ---
 
@@ -194,7 +214,7 @@ Portfolio → Snapshot → Public URL
 
 ```
 GET    /users/              # placeholder user retrieval
-POST   /users/register      # user registration
+POST   /users/register      # user registration (persists to SQLite)
 POST   /login               # JWT login
 ```
 
@@ -240,14 +260,28 @@ stores/
 
 ## Data Storage
 
-### Database Options
+### Database
 
 #### SQLite
 
 - Ideal for single-user/self-hosted setups
 - Lightweight and easy to deploy
 
-> **Note:** No database layer is implemented yet. Data is currently stubbed in the service layer.
+#### Schema Migrations
+
+- Managed via [golang-migrate](https://github.com/golang-migrate/migrate)
+- Applied automatically on application startup
+- Location: `db/migrations/`
+
+#### Code Generation
+
+- SQL queries are hand-written in `db/query/`
+- Go code is generated into `internal/repository/` by [sqlc](https://sqlc.dev)
+- The generated `Querier` interface enables mock-based testing
+
+#### Current Schema
+
+- `users`: `id TEXT PK`, `username TEXT UNIQUE`, `email TEXT UNIQUE`, `password_hash TEXT`
 
 ---
 
@@ -304,6 +338,7 @@ stores/
 
 - Unit tests for services
 - Integration tests for API endpoints
+- Repository layer uses sqlc-generated `Querier` interface, enabling mock injection in handler and service tests
 
 ### Frontend
 
