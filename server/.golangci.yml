@@ -10,6 +10,13 @@ linters:
       allow-whole-block: false
       branch-max-lines: 2
       case-max-lines: 0
+    ireturn:
+      allow:
+        - anon
+        - error
+        - empty
+        - stdlib
+        - .*ResponseObject$
     depguard:
       rules:
         main:
