@@ -45,7 +45,7 @@ const shutdownTimeout = 5 * time.Second
 //
 // The server is gracefully shutdown when an interrupt or termination signal is
 // received, allowing in-flight requests to complete wihin a timeout period.
-func main() {
+func main() { //nolint:funlen
 	// Load application configuration from environment variables.
 	cfg := config.LoadConfig()
 
@@ -76,6 +76,10 @@ func main() {
 	router.Get("/users/", userHandler.GetUser)
 	router.Post("/users/register", userHandler.CreateUser)
 	router.Post("/login", userHandler.LoginUser)
+
+	docsHandler := handler.NewDocsHandler(logger)
+	router.Get("/docs", docsHandler.GetDocsPage)
+	router.Get("/openapi.json", docsHandler.GetSpecJSON)
 
 	api.HandlerFromMuxWithBaseURL(strictHandler, router, "/api")
 
