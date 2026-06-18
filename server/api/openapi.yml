@@ -1,0 +1,113 @@
+# Reference: https://spec.openapis.org/oas/v3.1.1
+# This OpenAPI specification documents the RESTful HTTP API exposed by the
+# Arthika server. It is designed to be consumed by oapi-codegen
+# (https://github.com/oapi-codegen/oapi-codegen) to generate Go server stubs
+# and type definitions under server/internal/handler/.
+openapi: "3.0.0"
+
+# ---------------------------------------------------------------------------
+# API metadata
+# Reference: https://spec.openapis.org/oas/v3.1.1#info-object
+# The info object provides metadata about the API. The fields title, version,
+# and description are required by oapi-codegen; contact and license are
+# recommended for public APIs.
+# ---------------------------------------------------------------------------
+info:
+  title: Arthika API
+  description: >-
+    Arthika is a portfolio tracking application built with Go.
+
+    The API follows a layered architecture (Handler → Service → Repository) with
+    Chi routing, SQLite persistence, structured JSON logging via slog, and
+    JSON:API response format (application/vnd.api+json).
+  termsOfService: https://arthika.jarmos.dev/terms-of-service
+  contact:
+    name: Somraj Saha
+    url: https://jarmos.dev
+    email: contact@jarmos.dev
+  license:
+    name: GNU Affero General Public License v3.0
+    url: https://github.com/jarmos-san/arthika/blob/main/LICENSE
+  version: "0.1.0"
+
+# ---------------------------------------------------------------------------
+# Server definitions
+# Reference: https://spec.openapis.org/oas/v3.1.1#server-object
+# The server URL is relative (/api) because the actual host is provided at
+# deployment time via the ADDR environment variable (default :8000).
+# See server/internal/config/config.go for details.
+# ---------------------------------------------------------------------------
+servers:
+  - url: /api
+    description: >-
+      Relative base path prepended to all API routes. The actual host and port
+      are configured at deployment time via the ADDR environment variable
+      (default :8000).
+
+# ---------------------------------------------------------------------------
+# Paths
+# Reference: https://spec.openapis.org/oas/v3.1.1#paths-object
+# Each path maps to a corresponding handler method registered in
+# server/cmd/server/main.go using the Chi router.
+# ---------------------------------------------------------------------------
+paths:
+  /ping:
+    get:
+      tags: [System]
+      summary: Server health check
+      description: >-
+        Returns a status payload to confirm the server is running and accepting
+        requests. Used by load balancers, monitoring tools (e.g., UptimeRobot,
+        Prometheus), and CI/CD health checks. No authentication required.
+        Responds with {"status": "ok"} on success.
+      operationId: ping
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PingResponse"
+
+# ---------------------------------------------------------------------------
+# Reusable schemas (components)
+# Reference: https://spec.openapis.org/oas/v3.1.1#components-object
+# These types map to Go structs that oapi-codegen will generate under the
+# specified package.
+# ---------------------------------------------------------------------------
+components:
+  schemas:
+    # Response payload for the GET /ping health check endpoint.
+    # Confirms the server is running and accepting requests. The status
+    # field is always "ok" when the endpoint responds successfully.
+    PingResponse:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          example: ok
+
+# ---------------------------------------------------------------------------
+# Tag definitions
+# Reference: https://spec.openapis.org/oas/v3.1.1#tag-object
+# Tags are used to group operations by domain. Each tag maps to a logical
+# grouping in the Chi router (see server/cmd/server/main.go for route
+# registration order).
+# ---------------------------------------------------------------------------
+tags:
+  - name: System
+    description: >-
+      Endpoints for infrastructure monitoring, health checks, and operational
+      visibility. These routes are unauthenticated and intended for load
+      balancers, orchestration platforms (Kubernetes probes), and external
+      uptime monitors.
+
+# ---------------------------------------------------------------------------
+# External documentation
+# Reference: https://spec.openapis.org/oas/v3.1.1#external-documentation-object
+# Links to the project homepage and any additional user-facing docs.
+# ---------------------------------------------------------------------------
+externalDocs:
+  description: Project homepage and documentation
+  url: https://github.com/jarmos-san/arthika
