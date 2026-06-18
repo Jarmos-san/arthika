@@ -14,10 +14,6 @@ import (
 	"syscall"
 	"time"
 
-	chi "github.com/go-chi/chi/v5"
-	chimw "github.com/go-chi/chi/v5/middleware"
-	_ "github.com/mattn/go-sqlite3"
-
 	"github.com/Jarmos-san/arthika/server/internal/api"
 	"github.com/Jarmos-san/arthika/server/internal/app"
 	"github.com/Jarmos-san/arthika/server/internal/config"
@@ -25,6 +21,9 @@ import (
 	"github.com/Jarmos-san/arthika/server/internal/logger"
 	"github.com/Jarmos-san/arthika/server/internal/repository"
 	"github.com/Jarmos-san/arthika/server/internal/service"
+	chi "github.com/go-chi/chi/v5"
+	chimw "github.com/go-chi/chi/v5/middleware"
+	_ "github.com/mattn/go-sqlite3"
 )
 
 // shutdownTimeout defines the maximum duration allowed for gracefully shutting
@@ -78,7 +77,7 @@ func main() {
 	router.Post("/users/register", userHandler.CreateUser)
 	router.Post("/login", userHandler.LoginUser)
 
-	api.HandlerFromMux(strictHandler, router)
+	api.HandlerFromMuxWithBaseURL(strictHandler, router, "/api")
 
 	// Create a context that is cancelled on interrupt or kill signals.
 	ctx, stop := signal.NotifyContext(
