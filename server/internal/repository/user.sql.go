@@ -10,50 +10,39 @@ import (
 )
 
 const createUser = `-- name: CreateUser :exec
-INSERT INTO users (id, username, email, password_hash)
-VALUES (?, ?, ?, ?)
+INSERT INTO users (id, email, password_hash)
+VALUES (?, ?, ?)
 `
 
 type CreateUserParams struct {
 	ID           string
-	Username     string
 	Email        string
 	PasswordHash string `json:"-"`
 }
 
 // CreateUser
 //
-//	INSERT INTO users (id, username, email, password_hash)
-//	VALUES (?, ?, ?, ?)
+//	INSERT INTO users (id, email, password_hash)
+//	VALUES (?, ?, ?)
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) error {
-	_, err := q.db.ExecContext(ctx, createUser,
-		arg.ID,
-		arg.Username,
-		arg.Email,
-		arg.PasswordHash,
-	)
+	_, err := q.db.ExecContext(ctx, createUser, arg.ID, arg.Email, arg.PasswordHash)
 	return err
 }
 
 const findUserByEmail = `-- name: FindUserByEmail :one
-SELECT id, username, email, password_hash
+SELECT id, email, password_hash
 FROM users
 WHERE email = ? LIMIT 1
 `
 
 // FindUserByEmail
 //
-//	SELECT id, username, email, password_hash
+//	SELECT id, email, password_hash
 //	FROM users
 //	WHERE email = ? LIMIT 1
 func (q *Queries) FindUserByEmail(ctx context.Context, email string) (User, error) {
 	row := q.db.QueryRowContext(ctx, findUserByEmail, email)
 	var i User
-	err := row.Scan(
-		&i.ID,
-		&i.Username,
-		&i.Email,
-		&i.PasswordHash,
-	)
+	err := row.Scan(&i.ID, &i.Email, &i.PasswordHash)
 	return i, err
 }

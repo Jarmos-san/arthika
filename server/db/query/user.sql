@@ -1,8 +1,8 @@
 -- name: CreateUser :exec
-INSERT INTO users (id, username, email, password_hash)
-VALUES (?, ?, ?, ?);
+INSERT INTO users (id, email, password_hash)
+VALUES (?, ?, ?);
 
 -- name: FindUserByEmail :one
-SELECT id, username, email, password_hash
+SELECT id, email, password_hash
 FROM users
 WHERE email = ? LIMIT 1;
