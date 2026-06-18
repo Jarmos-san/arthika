@@ -14,16 +14,15 @@ import (
 	"syscall"
 	"time"
 
+	chi "github.com/go-chi/chi/v5"
+	chimw "github.com/go-chi/chi/v5/middleware"
+	_ "github.com/mattn/go-sqlite3"
+
 	"github.com/Jarmos-san/arthika/server/internal/api"
 	"github.com/Jarmos-san/arthika/server/internal/app"
 	"github.com/Jarmos-san/arthika/server/internal/config"
 	"github.com/Jarmos-san/arthika/server/internal/handler"
 	"github.com/Jarmos-san/arthika/server/internal/logger"
-	"github.com/Jarmos-san/arthika/server/internal/repository"
-	"github.com/Jarmos-san/arthika/server/internal/service"
-	chi "github.com/go-chi/chi/v5"
-	chimw "github.com/go-chi/chi/v5/middleware"
-	_ "github.com/mattn/go-sqlite3"
 )
 
 // shutdownTimeout defines the maximum duration allowed for gracefully shutting
@@ -45,7 +44,7 @@ const shutdownTimeout = 5 * time.Second
 //
 // The server is gracefully shutdown when an interrupt or termination signal is
 // received, allowing in-flight requests to complete wihin a timeout period.
-func main() { //nolint:funlen
+func main() {
 	// Load application configuration from environment variables.
 	cfg := config.LoadConfig()
 
@@ -66,16 +65,8 @@ func main() { //nolint:funlen
 		return
 	}
 
-	queries := repository.New(app.DB)
-	userService := service.NewUserService(queries)
-	userHandler := handler.NewUserHandler(userService, logger)
-
-	pingHandler := handler.NewPingHandler(logger)
-	strictHandler := api.NewStrictHandler(pingHandler, nil)
-
-	router.Get("/users/", userHandler.GetUser)
-	router.Post("/users/register", userHandler.CreateUser)
-	router.Post("/login", userHandler.LoginUser)
+	h := handler.NewHandler(logger)
+	strictHandler := api.NewStrictHandler(h, nil)
 
 	docsHandler := handler.NewDocsHandler(logger)
 	router.Get("/docs", docsHandler.GetDocsPage)
