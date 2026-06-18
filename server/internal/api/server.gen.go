@@ -17,18 +17,53 @@ import (
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/go-chi/chi/v5"
+	openapi_types "github.com/oapi-codegen/runtime/types"
 )
+
+// ErrorResponse defines model for ErrorResponse.
+type ErrorResponse struct {
+	Message string `json:"message"`
+}
 
 // PingResponse defines model for PingResponse.
 type PingResponse struct {
 	Status string `json:"status"`
 }
 
+// RegisterRequest defines model for RegisterRequest.
+type RegisterRequest struct {
+	Email    openapi_types.Email `json:"email"`
+	Password string              `json:"password"`
+}
+
+// RegisterResponse defines model for RegisterResponse.
+type RegisterResponse struct {
+	Email openapi_types.Email `json:"email"`
+	Id    openapi_types.UUID  `json:"id"`
+}
+
+// ValidationError defines model for ValidationError.
+type ValidationError struct {
+	Field   string `json:"field"`
+	Message string `json:"message"`
+}
+
+// ValidationErrors defines model for ValidationErrors.
+type ValidationErrors struct {
+	Errors []ValidationError `json:"errors"`
+}
+
+// RegisterJSONRequestBody defines body for Register for application/json ContentType.
+type RegisterJSONRequestBody = RegisterRequest
+
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 	// Server health check
 	// (GET /ping)
 	Ping(w http.ResponseWriter, r *http.Request)
+	// Register a new user
+	// (POST /users/register)
+	Register(w http.ResponseWriter, r *http.Request)
 }
 
 // Unimplemented server implementation that returns http.StatusNotImplemented for each endpoint.
@@ -38,6 +73,12 @@ type Unimplemented struct{}
 // Server health check
 // (GET /ping)
 func (_ Unimplemented) Ping(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Register a new user
+// (POST /users/register)
+func (_ Unimplemented) Register(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -55,6 +96,20 @@ func (siw *ServerInterfaceWrapper) Ping(w http.ResponseWriter, r *http.Request) 
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.Ping(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// Register operation middleware
+func (siw *ServerInterfaceWrapper) Register(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.Register(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -180,6 +235,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/ping", wrapper.Ping)
 	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/users/register", wrapper.Register)
+	})
 
 	return r
 }
@@ -205,11 +263,64 @@ func (response Ping200JSONResponse) VisitPingResponse(w http.ResponseWriter) err
 	return err
 }
 
+type RegisterRequestObject struct {
+	Body *RegisterJSONRequestBody
+}
+
+type RegisterResponseObject interface {
+	VisitRegisterResponse(w http.ResponseWriter) error
+}
+
+type Register201JSONResponse RegisterResponse
+
+func (response Register201JSONResponse) VisitRegisterResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type Register409JSONResponse ErrorResponse
+
+func (response Register409JSONResponse) VisitRegisterResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type Register422JSONResponse ValidationErrors
+
+func (response Register422JSONResponse) VisitRegisterResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
 	// Server health check
 	// (GET /ping)
 	Ping(ctx context.Context, request PingRequestObject) (PingResponseObject, error)
+	// Register a new user
+	// (POST /users/register)
+	Register(ctx context.Context, request RegisterRequestObject) (RegisterResponseObject, error)
 }
 
 type StrictHandlerFunc func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error)
@@ -265,28 +376,67 @@ func (sh *strictHandler) Ping(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// Register operation middleware
+func (sh *strictHandler) Register(w http.ResponseWriter, r *http.Request) {
+	var request RegisterRequestObject
+
+	var body RegisterJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.Register(ctx, request.(RegisterRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "Register")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RegisterResponseObject); ok {
+		if err := validResponse.VisitRegisterResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // Base64 encoded, compressed with deflate, json marshaled OpenAPI spec.
 // Stored as a slice of fixed-width chunks rather than one concatenated
 // const string: with thousands of chunks the chained `+` fold is several
 // times slower for the Go compiler than parsing a slice literal.
 var swaggerSpec = []string{
-	"lJXBcttGDIZfBbPtwZkypNpcOjrVY2dSNxnHtZpT7QO4BMm1l4vtLqhE49G1D9BH7JN0sJQcJTn1tiJB",
-	"LID/w68nY3mKHChINusnk+1IE5bjjQvDLeXIIZP+jokjJXG0BArKXE70CafoyawNP5rKyC7qOUtyYTD7",
-	"fWUS/TW7RJ1Z/3n87P45jtsHsmL2GkifhFJAf8m2ZO4o2+SiOA5mbW4SayiMPFHEgQBDBx3beaIgWIIq",
-	"Mydv1mYUiXndNIOTcW5ry1PzgGni/DJjaDDJ6B7R7CvjQs96k+UgaKW0M6HTHIdHvywf1h1tTWUCTlr0",
-	"hqeED7DBEb+58yR+X33VwvlyM7gMCJGT9OwdgyS0jy4MgDF6Z0sv0M7OC3x0MsIbru/CHyPB+c0V9Ow9",
-	"f9QEHneUqANMdnRCVuZEcPYrhs5Tgn///gc2lLbOUjnfUuTshNPuxZL1YnSQeBYXhgo2v79zQhApZZeF",
-	"gqUKsqS5JO3gt837a/A8DFrl1iFkz0NVFNBXay0sHViBntOEAmcn3TTb0NUY3Q8PmcOL2lTGO0sHsA5D",
-	"fXP9Ac77nhLDGwqU0MPN3Hpn4d0SC9tX9er/ady0nttmQhead1cXr683r1UUoTTl9/1hOie5Dl/VnzVs",
-	"SuxL7l/mQ3RlxEnB/ajm+c2VqcxWR1dUXtU/1iu9hyMFjM6szat6VUqPKGNBu4m6HesnM5B8i/otyZyC",
-	"arzsC0TcecYOhMFy6F2aQEYCrYmS4pTmEApBoQO0lqLKCrp5lCXX8CFTB+0OSpYWPQZLKVcwcVAmNFiY",
-	"fYYzqoe6gg9R3ES33LJUcJN4Ihlpzi8WzS+umotLGAm9jGBHso+5hmsGnGWkIEeEj4tfw+IjXV7Ie7o7",
-	"+MCdWcOd4cc7swcOkGdrKWfFQ62mJLnqdPV1WGokC2Flgj+tVsfNpVBmeMqbcvbZz/T0faLerM13zWfD",
-	"aw5u13xhdcWKvtTj/dtiZHmeJkw7NYBl8KcTUDBwyGpym10Wmsx9ybRopM+/VdmjuC1Bi5lA0YCYKFLo",
-	"qCiN3peN1yWlXIM6AFqZ0cPIWYoSaiKAiRYshrKsKNBR9LxTYwTVsaysAnN+eXkLFLYucShvt5gctp7g",
-	"rKMeZy+w/nm1WpUVXfasUYL398/dfd3F69BFdkGy7j240Cd8No4TvKovcVk4elYZPWxddq3zTnal00yH",
-	"vkt3czhBS1sMHTgVXkel937NNSc7UpYlO0SPoq6U4ezt3FIKpIlj4paOSB//e2Au5B8rLzAeXX+RdX+/",
-	"/y8AAP//",
+	"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",
+	"hr5laBvIQK/Vp9X/AgAA//8=",
 }
 
 // decodeSpec returns the embedded OpenAPI spec as raw JSON bytes,
