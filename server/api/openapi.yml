@@ -69,6 +69,41 @@ paths:
               schema:
                 $ref: "#/components/schemas/PingResponse"
 
+  /users/register:
+    post:
+      tags: [Users]
+      summary: Register a new user
+      description: >-
+        Creates a new user account with the given email and password. The
+        password is hashed before storage. Returns the newly created user's ID
+        and email on success.
+      operationId: register
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+      responses:
+        "201":
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RegisterResponse"
+        "409":
+          description: Conflict — email already registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: Unprocessable entity — validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationErrors"
+
 # ---------------------------------------------------------------------------
 # Reusable schemas (components)
 # Reference: https://spec.openapis.org/oas/v3.1.1#components-object
@@ -88,6 +123,61 @@ components:
           type: string
           example: ok
 
+    RegisterRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+          example: user@example.com
+        password:
+          type: string
+          minLength: 8
+          example: secureP@ss123
+      additionalProperties: false
+
+    RegisterResponse:
+      type: object
+      required: [id, email]
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 550e8400-e29b-41d4-a716-446655440000
+        email:
+          type: string
+          format: email
+          example: user@example.com
+
+    ValidationError:
+      type: object
+      required: [field, message]
+      properties:
+        field:
+          type: string
+          example: email
+        message:
+          type: string
+          example: email is required
+
+    ValidationErrors:
+      type: object
+      required: [errors]
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ValidationError"
+
+    ErrorResponse:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string
+          example: email already registered
+
 # ---------------------------------------------------------------------------
 # Tag definitions
 # Reference: https://spec.openapis.org/oas/v3.1.1#tag-object
@@ -102,6 +192,11 @@ tags:
       visibility. These routes are unauthenticated and intended for load
       balancers, orchestration platforms (Kubernetes probes), and external
       uptime monitors.
+
+  - name: Users
+    description: >-
+      Endpoints for user account management, including registration,
+      authentication, and profile operations.
 
 # ---------------------------------------------------------------------------
 # External documentation
