@@ -1,5 +1,5 @@
-# Created by https://www.toptal.com/developers/gitignore/api/web,go,vim,visualstudiocode,database
-# Edit at https://www.toptal.com/developers/gitignore?templates=web,go,vim,visualstudiocode,database
+# Created by https://www.toptal.com/developers/gitignore/api/go,vim,web,database,visualstudiocode,nuxtjs
+# Edit at https://www.toptal.com/developers/gitignore?templates=go,vim,web,database,visualstudiocode,nuxtjs
 
 ### Database ###
 *.accdb
@@ -10,19 +10,6 @@
 *.sqlite3
 *.db-shm
 *.db-wal
-
-# SQLite database created by golang-migrate
-server/db/arthika.db
-
-# golang-migrate version table
-server/db/arthika.db-shm
-server/db/arthika.db-wal
-
-# Taskfile checksum cache
-.task/
-
-# Project roadmap (not code)
-TODO.md
 
 ### Go ###
 # If you prefer the allow list template instead of the deny list, see community template:
@@ -46,6 +33,20 @@ TODO.md
 
 # Go workspace file
 go.work
+
+### NuxtJS ###
+# Generated dirs
+dist
+.nuxt
+.nuxt-*
+.output
+.gen
+
+# Node dependencies
+node_modules
+
+# System files
+*.log
 
 ### Vim ###
 # Swap
@@ -102,4 +103,7 @@ tags
 *.wat
 *.xhtml
 
-# End of https://www.toptal.com/developers/gitignore/api/web,go,vim,visualstudiocode,database
+.task
+TODO.md
+
+# End of https://www.toptal.com/developers/gitignore/api/go,vim,web,database,visualstudiocode,nuxtjs
