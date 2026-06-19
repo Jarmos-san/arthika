@@ -11,12 +11,12 @@ import (
 type Querier interface {
 	//CreateUser
 	//
-	//  INSERT INTO users (id, username, email, password_hash)
-	//  VALUES (?, ?, ?, ?)
+	//  INSERT INTO users (id, email, password_hash)
+	//  VALUES (?, ?, ?)
 	CreateUser(ctx context.Context, arg CreateUserParams) error
 	//FindUserByEmail
 	//
-	//  SELECT id, username, email, password_hash
+	//  SELECT id, email, password_hash
 	//  FROM users
 	//  WHERE email = ? LIMIT 1
 	FindUserByEmail(ctx context.Context, email string) (User, error)
