@@ -6,6 +6,7 @@ import (
 	"github.com/Jarmos-san/arthika/server/internal/api"
 )
 
+// Ping responds with a simple health check status.
 func (h *Handler) Ping(
 	ctx context.Context,
 	_ api.PingRequestObject,
