@@ -25,6 +25,19 @@ type ErrorResponse struct {
 	Message string `json:"message"`
 }
 
+// LoginRequest defines model for LoginRequest.
+type LoginRequest struct {
+	Email    openapi_types.Email `json:"email"`
+	Password string              `json:"password"`
+}
+
+// LoginResponse defines model for LoginResponse.
+type LoginResponse struct {
+	Email openapi_types.Email `json:"email"`
+	Id    openapi_types.UUID  `json:"id"`
+	Token string              `json:"token"`
+}
+
 // PingResponse defines model for PingResponse.
 type PingResponse struct {
 	Status string `json:"status"`
@@ -53,6 +66,9 @@ type ValidationErrors struct {
 	Errors []ValidationError `json:"errors"`
 }
 
+// LoginJSONRequestBody defines body for Login for application/json ContentType.
+type LoginJSONRequestBody = LoginRequest
+
 // RegisterJSONRequestBody defines body for Register for application/json ContentType.
 type RegisterJSONRequestBody = RegisterRequest
 
@@ -61,6 +77,9 @@ type ServerInterface interface {
 	// Server health check
 	// (GET /ping)
 	Ping(w http.ResponseWriter, r *http.Request)
+	// Authenticate a user
+	// (POST /users/login)
+	Login(w http.ResponseWriter, r *http.Request)
 	// Register a new user
 	// (POST /users/register)
 	Register(w http.ResponseWriter, r *http.Request)
@@ -73,6 +92,12 @@ type Unimplemented struct{}
 // Server health check
 // (GET /ping)
 func (_ Unimplemented) Ping(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Authenticate a user
+// (POST /users/login)
+func (_ Unimplemented) Login(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -96,6 +121,20 @@ func (siw *ServerInterfaceWrapper) Ping(w http.ResponseWriter, r *http.Request) 
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.Ping(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// Login operation middleware
+func (siw *ServerInterfaceWrapper) Login(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.Login(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -236,6 +275,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Get(options.BaseURL+"/ping", wrapper.Ping)
 	})
 	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/users/login", wrapper.Login)
+	})
+	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/users/register", wrapper.Register)
 	})
 
@@ -259,6 +301,56 @@ func (response Ping200JSONResponse) VisitPingResponse(w http.ResponseWriter) err
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type LoginRequestObject struct {
+	Body *LoginJSONRequestBody
+}
+
+type LoginResponseObject interface {
+	VisitLoginResponse(w http.ResponseWriter) error
+}
+
+type Login200JSONResponse LoginResponse
+
+func (response Login200JSONResponse) VisitLoginResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type Login401JSONResponse ErrorResponse
+
+func (response Login401JSONResponse) VisitLoginResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type Login422JSONResponse ValidationErrors
+
+func (response Login422JSONResponse) VisitLoginResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(422)
 	_, err := buf.WriteTo(w)
 	return err
 }
@@ -318,6 +410,9 @@ type StrictServerInterface interface {
 	// Server health check
 	// (GET /ping)
 	Ping(ctx context.Context, request PingRequestObject) (PingResponseObject, error)
+	// Authenticate a user
+	// (POST /users/login)
+	Login(ctx context.Context, request LoginRequestObject) (LoginResponseObject, error)
 	// Register a new user
 	// (POST /users/register)
 	Register(ctx context.Context, request RegisterRequestObject) (RegisterResponseObject, error)
@@ -376,6 +471,37 @@ func (sh *strictHandler) Ping(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// Login operation middleware
+func (sh *strictHandler) Login(w http.ResponseWriter, r *http.Request) {
+	var request LoginRequestObject
+
+	var body LoginJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.Login(ctx, request.(LoginRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "Login")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(LoginResponseObject); ok {
+		if err := validResponse.VisitLoginResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // Register operation middleware
 func (sh *strictHandler) Register(w http.ResponseWriter, r *http.Request) {
 	var request RegisterRequestObject
@@ -412,31 +538,35 @@ func (sh *strictHandler) Register(w http.ResponseWriter, r *http.Request) {
 // const string: with thousands of chunks the chained `+` fold is several
 // times slower for the Go compiler than parsing a slice literal.
 var swaggerSpec = []string{
-	"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",
-	"hr5laBvIQK/Vp9X/AgAA//8=",
+	"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",
 }
 
 // decodeSpec returns the embedded OpenAPI spec as raw JSON bytes,
