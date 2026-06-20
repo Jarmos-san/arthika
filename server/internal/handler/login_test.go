@@ -9,10 +9,11 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/google/uuid"
+
 	"github.com/Jarmos-san/arthika/server/internal/api"
 	"github.com/Jarmos-san/arthika/server/internal/handler"
 	"github.com/Jarmos-san/arthika/server/internal/repository"
-	"github.com/google/uuid"
 )
 
 // testUserID is a well-known UUID used in login test expectations.
