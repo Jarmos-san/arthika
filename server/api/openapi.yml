@@ -104,6 +104,43 @@ paths:
               schema:
                 $ref: "#/components/schemas/ValidationErrors"
 
+  /users/login:
+    post:
+      tags: [Users]
+      summary: Authenticate a user
+      description: >-
+        Validates the user's email and password credentials and returns a signed
+        JWT on success. The token must be included in subsequent requests via
+        the Authorization header as "Bearer <token>". Returns 401 for both
+        unknown email and wrong password to avoid leaking which credential is
+        incorrect.
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Authentication successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResponse"
+        "401":
+          description: Unauthorized — invalid email or password
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: Unprocessable entity — validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationErrors"
+
 # ---------------------------------------------------------------------------
 # Reusable schemas (components)
 # Reference: https://spec.openapis.org/oas/v3.1.1#components-object
@@ -141,6 +178,36 @@ components:
       type: object
       required: [id, email]
       properties:
+        id:
+          type: string
+          format: uuid
+          example: 550e8400-e29b-41d4-a716-446655440000
+        email:
+          type: string
+          format: email
+          example: user@example.com
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+          example: user@example.com
+        password:
+          type: string
+          minLength: 8
+          example: secureP@ss123
+      additionalProperties: false
+
+    LoginResponse:
+      type: object
+      required: [token, id, email]
+      properties:
+        token:
+          type: string
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
         id:
           type: string
           format: uuid
