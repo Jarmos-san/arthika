@@ -238,12 +238,11 @@ func TestRegister_HTTPEndpoint_Success(t *testing.T) {
 	hdl := handler.NewHandler(slog.Default(), mock)
 	strictHandler := api.NewStrictHandler(hdl, nil)
 
-	body := `{"email":"test@example.com","password":"supersecret"}`
 	req := httptest.NewRequestWithContext(
 		t.Context(),
 		http.MethodPost,
 		"/api/users/register",
-		strings.NewReader(body),
+		strings.NewReader(validLoginBody),
 	)
 	req.Header.Set("Content-Type", "application/json")
 
@@ -274,12 +273,11 @@ func TestRegister_HTTPEndpoint_DuplicateEmail(t *testing.T) {
 	hdl := handler.NewHandler(slog.Default(), mock)
 	strictHandler := api.NewStrictHandler(hdl, nil)
 
-	body := `{"email":"test@example.com","password":"supersecret"}`
 	req := httptest.NewRequestWithContext(
 		t.Context(),
 		http.MethodPost,
 		"/api/users/register",
-		strings.NewReader(body),
+		strings.NewReader(validLoginBody),
 	)
 	req.Header.Set("Content-Type", "application/json")
 
