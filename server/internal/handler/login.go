@@ -9,13 +9,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Jarmos-san/arthika/server/internal/api"
+	"github.com/Jarmos-san/arthika/server/internal/config"
 	jwt "github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"github.com/oapi-codegen/runtime/types"
 	"golang.org/x/crypto/bcrypt"
-
-	"github.com/Jarmos-san/arthika/server/internal/api"
-	"github.com/Jarmos-san/arthika/server/internal/config"
 )
 
 // jwtClaims holds the custom claims embedded in the JWT issued during login.
@@ -118,7 +117,7 @@ func (h *Handler) Login(
 	if findErr != nil {
 		if errors.Is(findErr, sql.ErrNoRows) {
 			return api.Login401JSONResponse{
-				Message: "provided email address was not found",
+				Message: "invalid email or password",
 			}, nil
 		}
 
@@ -131,7 +130,7 @@ func (h *Handler) Login(
 	// code with an error message
 	if !passwordsMatch(user.PasswordHash, password) {
 		return api.Login401JSONResponse{
-			Message: "invalid or wrong password",
+			Message: "invalid email or password",
 		}, nil
 	}
 

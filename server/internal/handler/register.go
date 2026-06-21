@@ -8,12 +8,11 @@ import (
 	"net/mail"
 	"strings"
 
+	"github.com/Jarmos-san/arthika/server/internal/api"
+	"github.com/Jarmos-san/arthika/server/internal/repository"
 	"github.com/google/uuid"
 	"github.com/oapi-codegen/runtime/types"
 	"golang.org/x/crypto/bcrypt"
-
-	"github.com/Jarmos-san/arthika/server/internal/api"
-	"github.com/Jarmos-san/arthika/server/internal/repository"
 )
 
 // minPasswordLength is the minimum number of characters required for a user's
