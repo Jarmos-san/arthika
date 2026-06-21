@@ -55,6 +55,12 @@ type RegisterResponse struct {
 	Id    openapi_types.UUID  `json:"id"`
 }
 
+// SystemStatusResponse defines model for SystemStatusResponse.
+type SystemStatusResponse struct {
+	// NeedsSetup Whether the system needs initial setup. True when no users exist.
+	NeedsSetup bool `json:"needsSetup"`
+}
+
 // ValidationError defines model for ValidationError.
 type ValidationError struct {
 	Field   string `json:"field"`
@@ -77,6 +83,9 @@ type ServerInterface interface {
 	// Server health check
 	// (GET /ping)
 	Ping(w http.ResponseWriter, r *http.Request)
+	// Check if the system needs initial setup
+	// (GET /setup/status)
+	SystemStatus(w http.ResponseWriter, r *http.Request)
 	// Authenticate a user
 	// (POST /users/login)
 	Login(w http.ResponseWriter, r *http.Request)
@@ -92,6 +101,12 @@ type Unimplemented struct{}
 // Server health check
 // (GET /ping)
 func (_ Unimplemented) Ping(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Check if the system needs initial setup
+// (GET /setup/status)
+func (_ Unimplemented) SystemStatus(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -121,6 +136,20 @@ func (siw *ServerInterfaceWrapper) Ping(w http.ResponseWriter, r *http.Request) 
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.Ping(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// SystemStatus operation middleware
+func (siw *ServerInterfaceWrapper) SystemStatus(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SystemStatus(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -275,6 +304,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Get(options.BaseURL+"/ping", wrapper.Ping)
 	})
 	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/setup/status", wrapper.SystemStatus)
+	})
+	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/users/login", wrapper.Login)
 	})
 	r.Group(func(r chi.Router) {
@@ -294,6 +326,27 @@ type PingResponseObject interface {
 type Ping200JSONResponse PingResponse
 
 func (response Ping200JSONResponse) VisitPingResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SystemStatusRequestObject struct {
+}
+
+type SystemStatusResponseObject interface {
+	VisitSystemStatusResponse(w http.ResponseWriter) error
+}
+
+type SystemStatus200JSONResponse SystemStatusResponse
+
+func (response SystemStatus200JSONResponse) VisitSystemStatusResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response); err != nil {
@@ -410,6 +463,9 @@ type StrictServerInterface interface {
 	// Server health check
 	// (GET /ping)
 	Ping(ctx context.Context, request PingRequestObject) (PingResponseObject, error)
+	// Check if the system needs initial setup
+	// (GET /setup/status)
+	SystemStatus(ctx context.Context, request SystemStatusRequestObject) (SystemStatusResponseObject, error)
 	// Authenticate a user
 	// (POST /users/login)
 	Login(ctx context.Context, request LoginRequestObject) (LoginResponseObject, error)
@@ -464,6 +520,30 @@ func (sh *strictHandler) Ping(w http.ResponseWriter, r *http.Request) {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(PingResponseObject); ok {
 		if err := validResponse.VisitPingResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// SystemStatus operation middleware
+func (sh *strictHandler) SystemStatus(w http.ResponseWriter, r *http.Request) {
+	var request SystemStatusRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SystemStatus(ctx, request.(SystemStatusRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SystemStatus")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SystemStatusResponseObject); ok {
+		if err := validResponse.VisitSystemStatusResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -538,35 +618,38 @@ func (sh *strictHandler) Register(w http.ResponseWriter, r *http.Request) {
 // const string: with thousands of chunks the chained `+` fold is several
 // times slower for the Go compiler than parsing a slice literal.
 var swaggerSpec = []string{
-	"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",
+	"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",
 }
 
 // decodeSpec returns the embedded OpenAPI spec as raw JSON bytes,
