@@ -28,6 +28,7 @@ const (
 type mockQuerier struct {
 	createUserFn      func(ctx context.Context, arg repository.CreateUserParams) error
 	findUserByEmailFn func(ctx context.Context, email string) (repository.User, error)
+	countUsersFn      func(ctx context.Context) (int64, error)
 }
 
 // CreateUser delegates to m.createUserFn.
@@ -46,6 +47,11 @@ func (m *mockQuerier) FindUserByEmail(
 	return m.findUserByEmailFn(ctx, email)
 }
 
+// CountUsers delegates to m.countUsersFn.
+func (m *mockQuerier) CountUsers(ctx context.Context) (int64, error) {
+	return m.countUsersFn(ctx)
+}
+
 // TestRegister_Success verifies a valid request returns 201 with the registered email.
 func TestRegister_Success(t *testing.T) {
 	t.Parallel()
@@ -57,6 +63,7 @@ func TestRegister_Success(t *testing.T) {
 		findUserByEmailFn: func(_ context.Context, _ string) (repository.User, error) {
 			return repository.User{}, sql.ErrNoRows
 		},
+		countUsersFn: nil,
 	}
 
 	hdl := handler.NewHandler(slog.Default(), mock)
@@ -95,6 +102,7 @@ func TestRegister_DuplicateEmail(t *testing.T) {
 				PasswordHash: "",
 			}, nil
 		},
+		countUsersFn: nil,
 	}
 
 	hdl := handler.NewHandler(slog.Default(), mock)
@@ -127,6 +135,7 @@ func TestRegister_InvalidEmail(t *testing.T) {
 	mock := &mockQuerier{
 		createUserFn:      nil,
 		findUserByEmailFn: nil,
+		countUsersFn:      nil,
 	}
 
 	hdl := handler.NewHandler(slog.Default(), mock)
@@ -163,6 +172,7 @@ func TestRegister_ShortPassword(t *testing.T) {
 	mock := &mockQuerier{
 		createUserFn:      nil,
 		findUserByEmailFn: nil,
+		countUsersFn:      nil,
 	}
 
 	hdl := handler.NewHandler(slog.Default(), mock)
@@ -199,6 +209,7 @@ func TestRegister_NilBody(t *testing.T) {
 	mock := &mockQuerier{
 		createUserFn:      nil,
 		findUserByEmailFn: nil,
+		countUsersFn:      nil,
 	}
 
 	hdl := handler.NewHandler(slog.Default(), mock)
@@ -233,6 +244,7 @@ func TestRegister_HTTPEndpoint_Success(t *testing.T) {
 		findUserByEmailFn: func(_ context.Context, _ string) (repository.User, error) {
 			return repository.User{}, sql.ErrNoRows
 		},
+		countUsersFn: nil,
 	}
 
 	hdl := handler.NewHandler(slog.Default(), mock)
@@ -268,6 +280,7 @@ func TestRegister_HTTPEndpoint_DuplicateEmail(t *testing.T) {
 				PasswordHash: "",
 			}, nil
 		},
+		countUsersFn: nil,
 	}
 
 	hdl := handler.NewHandler(slog.Default(), mock)
@@ -297,6 +310,7 @@ func TestRegister_HTTPEndpoint_InvalidBody(t *testing.T) {
 	mock := &mockQuerier{
 		createUserFn:      nil,
 		findUserByEmailFn: nil,
+		countUsersFn:      nil,
 	}
 
 	hdl := handler.NewHandler(slog.Default(), mock)
