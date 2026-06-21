@@ -7,69 +7,14 @@ import (
 	"fmt"
 	"net/mail"
 	"strings"
-	"time"
 
 	"github.com/Jarmos-san/arthika/server/internal/api"
+	"github.com/Jarmos-san/arthika/server/internal/auth"
 	"github.com/Jarmos-san/arthika/server/internal/config"
-	jwt "github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"github.com/oapi-codegen/runtime/types"
 	"golang.org/x/crypto/bcrypt"
 )
-
-// jwtClaims holds the custom claims embedded in the JWT issued during login.
-//
-// Embedding jwt.RegisteredClaims provides standard fields (sub, iat, exp, etc.)
-// while the Email field carries the authenticated user's email address.
-// This type is defined here for co-location with the Login handler but is
-// designed to be extracted into a shared auth package when the JWT middleware
-// (task 1c) is implemented.
-type jwtClaims struct {
-	jwt.RegisteredClaims
-
-	Email string `json:"email"`
-}
-
-// tokenExpiry is the lifetime of issued JWTs.
-const tokenExpiry = 24 * time.Hour
-
-// generateToken creates a signed JWT for the given user.
-//
-// The token embeds the user's ID (in the Subject claim) and email address
-// (in a custom claim), signed with HMAC-SHA256 using the provided secret.
-// The token expires after tokenExpiry from the time of issuance.
-//
-// This function is a standalone building block so that it can be extracted
-// into a shared auth package when the middleware layer (task 1c) needs it.
-func generateToken(userID, email, secret string) (string, error) {
-	// Timestamp required to create the token
-	now := time.Now()
-
-	// Create a "claims" object
-	claims := jwtClaims{
-		RegisteredClaims: jwt.RegisteredClaims{
-			Issuer:    "Arthika API",
-			Subject:   userID,
-			Audience:  jwt.ClaimStrings{},
-			ExpiresAt: jwt.NewNumericDate(now.Add(tokenExpiry)),
-			NotBefore: nil,
-			IssuedAt:  jwt.NewNumericDate(now),
-			ID:        uuid.NewString(),
-		},
-		Email: email,
-	}
-
-	// Create a token signed using the HMAC-SHA256 algorithm
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-
-	// Create a bytes string from the token, or return an error if it failed
-	signedToken, err := token.SignedString([]byte(secret))
-	if err != nil {
-		return "", fmt.Errorf("sign token: %w", err)
-	}
-
-	return signedToken, nil
-}
 
 // Login authenticates a user and returns a signed JWT.
 //
@@ -138,7 +83,7 @@ func (h *Handler) Login(
 	tokenSecret := config.LoadConfig().TokenSecret
 
 	// Generate the JWT if the user-provided credentials are correct and valid
-	token, err := generateToken(user.ID, user.Email, tokenSecret)
+	token, err := auth.GenerateToken(user.ID, user.Email, tokenSecret)
 	if err != nil {
 		h.logger.ErrorContext(ctx, "failed to generate JWT", "error", err)
 
