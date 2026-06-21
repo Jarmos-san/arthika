@@ -9,6 +9,10 @@ import (
 )
 
 type Querier interface {
+	//CountUsers
+	//
+	//  SELECT COUNT(*) FROM users
+	CountUsers(ctx context.Context) (int64, error)
 	//CreateUser
 	//
 	//  INSERT INTO users (id, email, password_hash)
