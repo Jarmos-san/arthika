@@ -19,6 +19,7 @@ import (
 	"github.com/Jarmos-san/arthika/server/internal/config"
 	"github.com/Jarmos-san/arthika/server/internal/handler"
 	"github.com/Jarmos-san/arthika/server/internal/logger"
+	"github.com/Jarmos-san/arthika/server/internal/middleware"
 	"github.com/Jarmos-san/arthika/server/internal/repository"
 	chi "github.com/go-chi/chi/v5"
 	chimw "github.com/go-chi/chi/v5/middleware"
@@ -52,7 +53,11 @@ func main() {
 
 	// Initialise the Chi router.
 	router := chi.NewRouter()
-	router.Use(chimw.Logger, chimw.Recoverer)
+	router.Use(
+		chimw.Logger,
+		chimw.Recoverer,
+		middleware.NewAuthMiddleware(cfg.TokenSecret),
+	)
 
 	// Construct the app container (opens DB, runs migrations).
 	app, err := app.New(cfg, router, logger)
