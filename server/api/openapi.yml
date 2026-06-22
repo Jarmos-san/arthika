@@ -104,6 +104,23 @@ paths:
               schema:
                 $ref: "#/components/schemas/ValidationErrors"
 
+  /setup/status:
+    get:
+      tags: [System]
+      summary: Check if the system needs initial setup
+      description: >-
+        Returns whether the application requires first-time setup (i.e., no users
+        exist yet). Used by the frontend to decide whether to show the
+        registration or login page. No authentication required.
+      operationId: systemStatus
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SystemStatusResponse"
+
   /users/login:
     post:
       tags: [Users]
@@ -236,6 +253,16 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ValidationError"
+
+    SystemStatusResponse:
+      type: object
+      required: [needsSetup]
+      properties:
+        needsSetup:
+          type: boolean
+          description: >-
+            Whether the system needs initial setup. True when no users exist.
+          example: true
 
     ErrorResponse:
       type: object

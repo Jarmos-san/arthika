@@ -42,6 +42,7 @@ func TestLogin_Success(t *testing.T) {
 				PasswordHash: testPasswordHash,
 			}, nil
 		},
+		countUsersFn: nil,
 	}
 
 	hdl := handler.NewHandler(slog.Default(), mock)
@@ -90,6 +91,7 @@ func TestLogin_WrongPassword(t *testing.T) {
 				PasswordHash: testPasswordHash,
 			}, nil
 		},
+		countUsersFn: nil,
 	}
 
 	hdl := handler.NewHandler(slog.Default(), mock)
@@ -128,6 +130,7 @@ func TestLogin_EmailNotFound(t *testing.T) {
 		findUserByEmailFn: func(_ context.Context, _ string) (repository.User, error) {
 			return repository.User{}, sql.ErrNoRows
 		},
+		countUsersFn: nil,
 	}
 
 	hdl := handler.NewHandler(slog.Default(), mock)
@@ -163,6 +166,7 @@ func TestLogin_InvalidEmail(t *testing.T) {
 	mock := &mockQuerier{
 		createUserFn:      nil,
 		findUserByEmailFn: nil,
+		countUsersFn:      nil,
 	}
 
 	hdl := handler.NewHandler(slog.Default(), mock)
@@ -199,6 +203,7 @@ func TestLogin_NilBody(t *testing.T) {
 	mock := &mockQuerier{
 		createUserFn:      nil,
 		findUserByEmailFn: nil,
+		countUsersFn:      nil,
 	}
 
 	hdl := handler.NewHandler(slog.Default(), mock)
@@ -228,6 +233,7 @@ func TestLogin_EmptyPassword(t *testing.T) {
 	mock := &mockQuerier{
 		createUserFn:      nil,
 		findUserByEmailFn: nil,
+		countUsersFn:      nil,
 	}
 
 	hdl := handler.NewHandler(slog.Default(), mock)
@@ -271,6 +277,7 @@ func TestLogin_HTTPEndpoint_Success(t *testing.T) {
 				PasswordHash: testPasswordHash,
 			}, nil
 		},
+		countUsersFn: nil,
 	}
 
 	hdl := handler.NewHandler(slog.Default(), mock)
@@ -306,6 +313,7 @@ func TestLogin_HTTPEndpoint_BadCredentials(t *testing.T) {
 				PasswordHash: testPasswordHash,
 			}, nil
 		},
+		countUsersFn: nil,
 	}
 
 	hdl := handler.NewHandler(slog.Default(), mock)
@@ -336,6 +344,7 @@ func TestLogin_HTTPEndpoint_InvalidBody(t *testing.T) {
 	mock := &mockQuerier{
 		createUserFn:      nil,
 		findUserByEmailFn: nil,
+		countUsersFn:      nil,
 	}
 
 	hdl := handler.NewHandler(slog.Default(), mock)
