@@ -28,7 +28,7 @@ jobs:
       - name: Install sqlc
         uses: sqlc-dev/setup-sqlc@v5.0.0
         with:
-          sqlc-version: latest
+          sqlc-version: 1.31.1
 
       - name: Lint SQL Statements
         run: sqlc vet
