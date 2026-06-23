@@ -1,5 +1,3 @@
-# yaml-language-server: $schema=https://taskfile.dev/schema.json
-
 version: "3"
 
 vars:
@@ -13,51 +11,130 @@ tasks:
     desc: Display all available commands
     cmd: task --list
 
-  lint:
+  server:lint:
     desc: Run linters across the source code.
     dir: server
     cmd: golangci-lint run ./...
 
-  generate:
-    desc: Run all code generators
-    cmds:
-      - task: sqlc
-
   sqlc:
+    internal: true
     desc: Generate Go code from SQL queries using sqlc
     dir: server
     cmd: sqlc generate
+    vars:
+      SQLC_CONFIG_FILE: sqlc.yaml
+      SQLC_GEN_CODE: internal/repository/**/*.go
+      DB_QUERIES: db/query/**/*.sql
+      DB_MIGRATIONS: db/migrations/**/*.sql
     sources:
-      - "sqlc.yaml"
-      - "db/query/**/*.sql"
-      - "db/migrations/**/*.sql"
+      - "{{ .SQLC_CONFIG_FILE }}"
+      - "{{ .DB_QUERIES }}"
+      - "{{ .DB_MIGRATIONS }}"
     generates:
-      - "internal/repository/**/*.go"
+      - "{{ .SQLC_GEN_CODE }}"
     preconditions:
       - sh: which sqlc
         msg: >-
           sqlc not found. Install with: go install
           github.com/sqlc-dev/sqlc/cmd/sqlc@latest
 
+  oapi-codegen:
+    internal: true
+    desc: Generate Go server stubs from the OpenAPI spec
+    dir: server
+    cmd: oapi-codegen -config oapi-codegen.yml api/openapi.yml
+    vars:
+      OAPI_CONFIG_FILE: oapi-codegen.yml
+      OAPI_SPEC_FILE: api/openapi.yml
+      OAPI_GEN_CODE: internal/api/server.gen.go
+    sources:
+      - "{{ .OAPI_CONFIG_FILE }}"
+      - "{{ .OAPI_SPEC_FILE }}"
+    generates:
+      - "{{ .OAPI_GEN_CODE }}"
+    preconditions:
+      - sh: which oapi-codegen
+        msg: >-
+          oapi-codegen not found. Install with: go install
+          github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@latest
+
+  server:generate:
+    desc: Run all server code generators
+    cmds:
+      - task: sqlc
+      - task: oapi-codegen
+
+  server:test:
+    desc: Run all server tests
+    dir: server
+    cmd: go test ./...
+
+  server:run:
+    desc: Start the server on :8000
+    vars:
+      SERVER_EXEC_PATH: ./server/cmd/server
+    cmd: go run "{{ .SERVER_EXEC_PATH }}"
+
+  client:install:
+    desc: Install client dependencies
+    dir: client
+    cmd: pnpm install --frozen-lockfile
+    status:
+      - test -d node_modules
+      - test -d .nuxt
+    preconditions:
+      - sh: which pnpm
+        msg: "pnpm not found. Install from https://pnpm.io/installation"
+
+  client:dev:
+    desc: Start the Nuxt dev server
+    dir: client
+    cmd: pnpm dev
+    preconditions:
+      - sh: which pnpm
+        msg: "pnpm not found. Install from https://pnpm.io/installation"
+
+  client:build:
+    desc: Build the client for production
+    dir: client
+    cmd: pnpm build
+    status:
+      - test -d .output
+    preconditions:
+      - sh: which pnpm
+        msg: "pnpm not found. Install from https://pnpm.io/installation"
+
+  client:typecheck:
+    desc: Run vue-tsc type checking
+    dir: client
+    cmd: pnpm typecheck
+    preconditions:
+      - sh: which pnpm
+        msg: "pnpm not found. Install from https://pnpm.io/installation"
+      - sh: test -d .nuxt
+        msg:
+          The client-side application was not set up properly. Please run "task
+          client:install" before running the command again.
+
   migrate:up:
     desc: Run pending up migrations
     dir: server
-    cmd: migrate -path {{.MIGRATIONS_DIR}} -database "{{.DB_URL}}" up
+    cmd: migrate -path "{{ .MIGRATIONS_DIR }}" -database "{{ .DB_URL }}" up
     preconditions:
       - sh: which migrate
         msg: >-
-          migrate binary not found. Install with: go install -tags
-          '{{.MIGRATE_INSTALL_TAGS}}' {{.MIGRATE_INSTALL_URL}}
+          migrate binary not found. Install with: go install -tags '{{
+          .MIGRATE_INSTALL_TAGS }}' {{ .MIGRATE_INSTALL_URL }}
 
   migrate:down:
     desc: Roll back all down migrations
     dir: server
-    cmd: migrate -path {{.MIGRATIONS_DIR}} -database "{{.DB_URL}}" down -all
+    cmd: migrate -path {{ .MIGRATIONS_DIR }} -database "{{ .DB_URL }}" down -all
     preconditions:
       - sh: which migrate
         msg: >-
-          migrate binary not found. Install with: go install -tags
-          '{{.MIGRATE_INSTALL_TAGS}}' {{.MIGRATE_INSTALL_URL}}
+          migrate binary not found. Install with: go install -tags '{{
+          .MIGRATE_INSTALL_TAGS }}' {{ .MIGRATE_INSTALL_URL }}
 
   migrate:reset:
     desc: Roll back then re-apply all migrations
