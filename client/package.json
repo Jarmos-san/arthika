@@ -7,12 +7,18 @@
     "build": "nuxt build",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
+    "typecheck": "vue-tsc --noEmit",
     "postinstall": "nuxt prepare"
   },
   "dependencies": {
-    "nuxt": "^4.0.0",
-    "@nuxt/ui": "^3.0.0",
-    "vue": "latest",
-    "vue-router": "latest"
-  }
+    "@nuxt/ui": "^3.3.7",
+    "nuxt": "^4.4.8",
+    "vue": "^3.5.38",
+    "vue-router": "^5.1.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "vue-tsc": "^2.2.12"
+  },
+  "packageManager": "pnpm@11.8.0"
 }
