@@ -99,7 +99,7 @@ export type ApiResult<T> =
  * ```
  */
 export const useAuth = () => {
-  const user = ref<User | null>(null);
+  const user = useState<User | null>("auth-user", () => null);
 
   /**
    * Register a new user account.
