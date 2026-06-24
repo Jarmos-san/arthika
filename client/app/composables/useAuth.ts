@@ -1,3 +1,5 @@
+import { FetchError } from "ofetch";
+
 /** A registered user as returned by the API. */
 export interface User {
   id: string;
@@ -32,6 +34,12 @@ export interface LoginResponse {
 /** Response from GET /api/setup/status. */
 export interface SystemStatusResponse {
   needsSetup: boolean;
+}
+
+/** Shape of the JSON body returned by the API on error. */
+interface ApiErrorBody {
+  message?: string;
+  errors?: ValidationError[];
 }
 
 /** A single field-level validation error returned by the API (422). */
@@ -114,29 +122,36 @@ export const useAuth = () => {
         body: { email, password },
       });
       return { success: true, data };
-    } catch (err: any) {
-      if (err.status === 409) {
-        return {
-          success: false,
-          error: {
-            status: "conflict",
-            message: err.data?.message ?? "Email already registered",
-          },
-        };
-      }
-      if (err.status === 422) {
-        return {
-          success: false,
-          error: {
-            status: "validation",
-            message: "Validation failed",
-            errors: err.data?.errors,
-          },
-        };
+    } catch (err: unknown) {
+      if (err instanceof FetchError) {
+        const body = err.data as ApiErrorBody | undefined;
+        if (err.status === 409) {
+          return {
+            success: false,
+            error: {
+              status: "conflict",
+              message: body?.message ?? "Email already registered",
+            },
+          };
+        }
+        if (err.status === 422) {
+          return {
+            success: false,
+            error: {
+              status: "validation",
+              message: "Validation failed",
+              errors: body?.errors,
+            },
+          };
+        }
       }
       return {
         success: false,
-        error: { status: "unknown", message: err.message },
+        error: {
+          status: "unknown",
+          message:
+            err instanceof Error ? err.message : "An unexpected error occurred",
+        },
       };
     }
   };
@@ -165,29 +180,36 @@ export const useAuth = () => {
       token.value = data.token;
       user.value = { id: data.id, email: data.email };
       return { success: true, data };
-    } catch (err: any) {
-      if (err.status === 401) {
-        return {
-          success: false,
-          error: {
-            status: "unauthorized",
-            message: err.data?.message ?? "Invalid email or password",
-          },
-        };
-      }
-      if (err.status === 422) {
-        return {
-          success: false,
-          error: {
-            status: "validation",
-            message: "Validation failed",
-            errors: err.data?.errors,
-          },
-        };
+    } catch (err: unknown) {
+      if (err instanceof FetchError) {
+        const body = err.data as ApiErrorBody | undefined;
+        if (err.status === 401) {
+          return {
+            success: false,
+            error: {
+              status: "unauthorized",
+              message: body?.message ?? "Invalid email or password",
+            },
+          };
+        }
+        if (err.status === 422) {
+          return {
+            success: false,
+            error: {
+              status: "validation",
+              message: "Validation failed",
+              errors: body?.errors,
+            },
+          };
+        }
       }
       return {
         success: false,
-        error: { status: "unknown", message: err.message },
+        error: {
+          status: "unknown",
+          message:
+            err instanceof Error ? err.message : "An unexpected error occurred",
+        },
       };
     }
   };
@@ -207,10 +229,14 @@ export const useAuth = () => {
     try {
       const data = await $fetch<SystemStatusResponse>("/api/setup/status");
       return { success: true, data };
-    } catch (err: any) {
+    } catch (err: unknown) {
       return {
         success: false,
-        error: { status: "unknown", message: err.message },
+        error: {
+          status: "unknown",
+          message:
+            err instanceof Error ? err.message : "An unexpected error occurred",
+        },
       };
     }
   };
