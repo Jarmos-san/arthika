@@ -5,4 +5,7 @@ export default defineNuxtConfig({
   },
   modules: ["@nuxt/ui"],
   ssr: false,
+  typescript: {
+    strict: true,
+  },
 });
