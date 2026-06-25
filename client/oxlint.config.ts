@@ -20,6 +20,20 @@ export default defineConfig({
     typeAware: true,
     typeCheck: true,
   },
+  overrides: [
+    {
+      files: ["app/composables/**/*"],
+      rules: {
+        "unicorn/filename-case": "off",
+      },
+    },
+    {
+      files: ["*.config.ts"],
+      rules: {
+        "import/no-default-export": "off",
+      },
+    },
+  ],
   plugins: [
     "typescript",
     "unicorn",
