@@ -8,6 +8,10 @@
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "typecheck": "vue-tsc --noEmit",
+    "fmt": "oxfmt --disable-nested-config",
+    "fmt:check": "oxfmt --check --disable-nested-config",
+    "lint": "oxlint",
+    "lint:fix": "oxlint --fix",
     "postinstall": "nuxt prepare"
   },
   "dependencies": {
@@ -17,6 +21,9 @@
     "vue-router": "^5.1.0"
   },
   "devDependencies": {
+    "oxfmt": "^0.56.0",
+    "oxlint": "^1.71.0",
+    "oxlint-tsgolint": "^0.23.0",
     "typescript": "^5.9.3",
     "vue-tsc": "^2.2.12"
   },

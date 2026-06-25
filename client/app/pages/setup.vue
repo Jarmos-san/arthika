@@ -1,95 +1,96 @@
 <script setup lang="ts">
-/**
- * Setup page — first-time admin account creation.
- *
- * This page is shown when the application has no users and requires initial
- * setup. It presents a registration form (email + password) that calls the
- * `/api/users/register` endpoint via the `useAuth` composable.
- *
- * On success the UI transitions to a success state and auto-redirects to the
- * login page after a brief delay.
- *
- * @see {@link useAuth#register} for the underlying API call and error handling.
- * @see /api/openapi.yml for the POST /api/users/register endpoint contract.
- */
+  /**
+   * @description Setup page — first-time admin account creation.
+   *
+   * This page is shown when the application has no users and requires initial
+   * setup. It presents a registration form (email + password) that calls the
+   * `/api/users/register` endpoint via the `useAuth` composable.
+   *
+   * On success the UI transitions to a success state and auto-redirects to the
+   * login page after a brief delay.
+   *
+   * @see {@link useAuth#register} for the underlying API call and error handling.
+   * @see /api/openapi.yml for the POST /api/users/register endpoint contract.
+   */
 
-/** Tracks the current UI step: registration form or post-submit success. */
-const step = ref<"form" | "success">("form");
+  /** @description Tracks the current UI step: registration form or post-submit success. */
+  const step = ref<"form" | "success">("form");
 
-/** Bound form model for the email and password fields. */
-const state = reactive({ email: "", password: "" });
+  /** @description Bound form model for the email and password fields. */
+  const state = reactive({ email: "", password: "" });
 
-/** Error message returned from the server on a failed registration attempt. */
-const serverError = ref("");
+  /** @description Error message returned from the server on a failed registration attempt. */
+  const serverError = ref("");
 
-/** Whether the form is currently being submitted (disables the button). */
-const submitting = ref(false);
+  /** @description Whether the form is currently being submitted (disables the button). */
+  const submitting = ref(false);
 
-const { register } = useAuth();
+  const { register } = useAuth();
 
-/**
- * Client-side form validation for the setup form.
- *
- * Checks that the email is non-empty and matches a basic email regex, and that
- * the password is non-empty and at least 8 characters long. Matches the
- * validation rules expected by `UForm`.
- *
- * @param state - The current form state.
- * @returns An array of error objects, each with a `name` (field name) and
- *          `message`. An empty array means the form is valid.
- */
-const validate = (state: { email: string; password: string }) => {
-  const errors: { name: string; message: string }[] = [];
-  if (!state.email) {
-    errors.push({ name: "email", message: "Email is required" });
-  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(state.email)) {
-    errors.push({ name: "email", message: "Invalid email format" });
-  }
-  if (!state.password) {
-    errors.push({ name: "password", message: "Password is required" });
-  } else if (state.password.length < 8) {
-    errors.push({
-      name: "password",
-      message: "Password must be at least 8 characters",
-    });
-  }
-  return errors;
-};
+  /**
+   * @description Client-side form validation for the setup form.
+   *
+   * Checks that the email is non-empty and matches a basic email regex, and that
+   * the password is non-empty and at least 8 characters long. Matches the
+   * validation rules expected by `UForm`.
+   *
+   * @param state - The current form state.
+   *
+   * @returns An array of error objects, each with a `name` (field name) and
+   *   `message`. An empty array means the form is valid.
+   */
+  const validate = (state: { email: string; password: string }) => {
+    const errors: { name: string; message: string }[] = [];
+    if (!state.email) {
+      errors.push({ message: "Email is required", name: "email" });
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(state.email)) {
+      errors.push({ message: "Invalid email format", name: "email" });
+    }
+    if (!state.password) {
+      errors.push({ message: "Password is required", name: "password" });
+    } else if (state.password.length < 8) {
+      errors.push({
+        message: "Password must be at least 8 characters",
+        name: "password",
+      });
+    }
+    return errors;
+  };
 
-/**
- * Handle form submission.
- *
- * Calls `useAuth().register()` with the current email and password. On failure
- * the server error message is displayed below the form. On success the UI
- * switches to the success state and auto-redirects to /login after 2 seconds.
- */
-const onSubmit = async () => {
-  submitting.value = true;
-  serverError.value = "";
+  /**
+   * @description Handle form submission.
+   *
+   * Calls `useAuth().register()` with the current email and password. On failure
+   * the server error message is displayed below the form. On success the UI
+   * switches to the success state and auto-redirects to /login after 2 seconds.
+   */
+  const onSubmit = async () => {
+    submitting.value = true;
+    serverError.value = "";
 
-  const result = await register(state.email, state.password);
+    const result = await register(state.email, state.password);
 
-  if (!result.success) {
-    serverError.value = (result.error! as ApiError).message;
+    if (!result.success) {
+      serverError.value = (result.error! as ApiError).message;
+      submitting.value = false;
+      return;
+    }
+
+    step.value = "success";
+    setTimeout(() => navigateTo("/login"), 2000);
     submitting.value = false;
-    return;
-  }
 
-  step.value = "success";
-  setTimeout(() => navigateTo("/login"), 2000);
-  submitting.value = false;
-
-  submitting.value = false;
-};
+    submitting.value = false;
+  };
 </script>
 
 <template>
-  <div class="flex items-center justify-center min-h-screen p-4">
+  <div class="flex min-h-screen items-center justify-center p-4">
     <UCard v-if="step === 'form'" class="w-full max-w-md">
       <template #header>
         <div class="text-center">
           <h1 class="text-2xl font-bold">Set up your account</h1>
-          <p class="text-sm text-muted mt-1">
+          <p class="text-muted mt-1 text-sm">
             Create the first user to get started with Arthika
           </p>
         </div>
@@ -112,7 +113,7 @@ const onSubmit = async () => {
           />
         </UFormField>
 
-        <p class="text-xs text-muted mt-3">
+        <p class="text-muted mt-3 text-xs">
           Your password is securely stored in a local database and it will never
           be shared with anyone else.
         </p>
@@ -122,16 +123,16 @@ const onSubmit = async () => {
         </UButton>
       </UForm>
 
-      <p v-if="serverError" class="mt-4 text-sm text-error">
+      <p v-if="serverError" class="text-error mt-4 text-sm">
         {{ serverError }}
       </p>
     </UCard>
 
     <div v-else class="text-center">
       <div
-        class="w-16 h-16 mx-auto mb-4 rounded-full bg-success/10 text-success flex items-center justify-center animate-success"
+        class="bg-success/10 text-success animate-success mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full"
       >
-        <UIcon name="i-lucide-check" class="w-8 h-8" />
+        <UIcon name="i-lucide-check" class="h-8 w-8" />
       </div>
       <h2 class="text-2xl font-bold">Account created!</h2>
       <p class="text-muted mt-2">Redirecting to login&hellip;</p>
@@ -140,19 +141,19 @@ const onSubmit = async () => {
 </template>
 
 <style scoped>
-.animate-success {
-  animation: pop 0.4s ease-out;
-}
+  .animate-success {
+    animation: pop 0.4s ease-out;
+  }
 
-@keyframes pop {
-  0% {
-    transform: scale(0);
+  @keyframes pop {
+    0% {
+      transform: scale(0);
+    }
+    50% {
+      transform: scale(1.15);
+    }
+    100% {
+      transform: scale(1);
+    }
   }
-  50% {
-    transform: scale(1.15);
-  }
-  100% {
-    transform: scale(1);
-  }
-}
 </style>

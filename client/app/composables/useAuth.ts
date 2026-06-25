@@ -1,55 +1,55 @@
 import { FetchError } from "ofetch";
 
-/** A registered user as returned by the API. */
+/** @description A registered user as returned by the API. */
 export interface User {
   id: string;
   email: string;
 }
 
-/** Payload for POST /api/users/register. */
+/** @description Payload for POST /api/users/register. */
 export interface RegisterRequest {
   email: string;
   password: string;
 }
 
-/** Response from POST /api/users/register on success (201). */
+/** @description Response from POST /api/users/register on success (201). */
 export interface RegisterResponse {
   id: string;
   email: string;
 }
 
-/** Payload for POST /api/users/login. */
+/** @description Payload for POST /api/users/login. */
 export interface LoginRequest {
   email: string;
   password: string;
 }
 
-/** Response from POST /api/users/login on success (200). */
+/** @description Response from POST /api/users/login on success (200). */
 export interface LoginResponse {
   token: string;
   id: string;
   email: string;
 }
 
-/** Response from GET /api/setup/status. */
+/** @description Response from GET /api/setup/status. */
 export interface SystemStatusResponse {
   needsSetup: boolean;
 }
 
-/** Shape of the JSON body returned by the API on error. */
+/** @description Shape of the JSON body returned by the API on error. */
 interface ApiErrorBody {
   message?: string;
   errors?: ValidationError[];
 }
 
-/** A single field-level validation error returned by the API (422). */
+/** @description A single field-level validation error returned by the API (422). */
 export interface ValidationError {
   field: string;
   message: string;
 }
 
 /**
- * A structured error returned by API methods in this composable.
+ * @description A structured error returned by API methods in this composable.
  *
  * `status` distinguishes the error category so callers can handle each case
  * appropriately (e.g. show inline validation errors vs. a generic banner).
@@ -61,7 +61,7 @@ export interface ApiError {
 }
 
 /**
- * Discriminated union for API call results.
+ * @description Discriminated union for API call results.
  *
  * - `{ success: true; data: T }` — the call succeeded.
  * - `{ success: false; error: ApiError }` — the call failed with a structured
@@ -75,7 +75,7 @@ export type ApiResult<T> =
   | { success: false; error: ApiError };
 
 /**
- * Authentication composable for Arthika.
+ * @description Authentication composable for Arthika.
  *
  * Provides reactive auth state and methods for registering, logging in,
  * checking setup status, and logging out. Uses `$fetch` for API calls and
@@ -83,26 +83,27 @@ export type ApiResult<T> =
  *
  * Auto-imported by Nuxt 4 — no manual import needed in `.vue` files.
  *
+ * @example
+ *   ```ts
+ *   const { register, user, isAuthenticated } = useAuth()
+ *   const result = await register('a@b.com', 'password123')
+ *   if (result.success) { /* redirect to login *\/ }
+ *   ```
+ *
  * @returns An object containing:
+ *
  *   - `user` — reactive `User | null`, read-only.
  *   - `register(email, password)` — create a new account.
  *   - `login(email, password)` — authenticate and persist the session.
  *   - `checkSetupStatus()` — query whether the app needs first-time setup.
  *   - `logout()` — clear the session.
  *   - `isAuthenticated` — computed boolean derived from `user`.
- *
- * @example
- * ```ts
- * const { register, user, isAuthenticated } = useAuth()
- * const result = await register('a@b.com', 'password123')
- * if (result.success) { /* redirect to login *\/ }
- * ```
  */
 export const useAuth = () => {
   const user = useState<User | null>("auth-user", () => null);
 
   /**
-   * Register a new user account.
+   * @description Register a new user account.
    *
    * POSTs to /api/users/register with the provided credentials. On success the
    * returned user data is **not** automatically persisted — the caller should
@@ -110,7 +111,9 @@ export const useAuth = () => {
    *
    * @param email - User's email address.
    * @param password - User's password (minimum 8 characters).
+   *
    * @returns `ApiResult`:
+   *
    *   - success: the created user's id and email.
    *   - `conflict` (409): the email is already registered.
    *   - `validation` (422): the email or password failed validation.
@@ -118,46 +121,48 @@ export const useAuth = () => {
   const register = async (email: string, password: string) => {
     try {
       const data = await $fetch<RegisterResponse>("/api/users/register", {
-        method: "POST",
         body: { email, password },
+        method: "POST",
       });
-      return { success: true, data };
-    } catch (err: unknown) {
-      if (err instanceof FetchError) {
-        const body = err.data as ApiErrorBody | undefined;
-        if (err.status === 409) {
+      return { data, success: true };
+    } catch (error: unknown) {
+      if (error instanceof FetchError) {
+        const body = error.data as ApiErrorBody | undefined;
+        if (error.status === 409) {
           return {
-            success: false,
             error: {
-              status: "conflict",
               message: body?.message ?? "Email already registered",
+              status: "conflict",
             },
+            success: false,
           };
         }
-        if (err.status === 422) {
+        if (error.status === 422) {
           return {
-            success: false,
             error: {
-              status: "validation",
-              message: "Validation failed",
               errors: body?.errors,
+              message: "Validation failed",
+              status: "validation",
             },
+            success: false,
           };
         }
       }
       return {
-        success: false,
         error: {
-          status: "unknown",
           message:
-            err instanceof Error ? err.message : "An unexpected error occurred",
+            error instanceof Error
+              ? error.message
+              : "An unexpected error occurred",
+          status: "unknown",
         },
+        success: false,
       };
     }
   };
 
   /**
-   * Authenticate an existing user.
+   * @description Authenticate an existing user.
    *
    * POSTs to /api/users/login with the provided credentials. On success the JWT
    * is persisted in a `token` cookie (via `useCookie`) and the user's reactive
@@ -165,7 +170,9 @@ export const useAuth = () => {
    *
    * @param email - User's email address.
    * @param password - User's password.
+   *
    * @returns `ApiResult`:
+   *
    *   - success: the JWT token, user id, and email.
    *   - `unauthorized` (401): the email or password is incorrect.
    *   - `validation` (422): the email or password failed validation.
@@ -173,76 +180,81 @@ export const useAuth = () => {
   const login = async (email: string, password: string) => {
     try {
       const data = await $fetch<LoginResponse>("/api/users/login", {
-        method: "POST",
         body: { email, password },
+        method: "POST",
       });
       const token = useCookie("token");
       token.value = data.token;
-      user.value = { id: data.id, email: data.email };
-      return { success: true, data };
-    } catch (err: unknown) {
-      if (err instanceof FetchError) {
-        const body = err.data as ApiErrorBody | undefined;
-        if (err.status === 401) {
+      user.value = { email: data.email, id: data.id };
+      return { data, success: true };
+    } catch (error: unknown) {
+      if (error instanceof FetchError) {
+        const body = error.data as ApiErrorBody | undefined;
+        if (error.status === 401) {
           return {
-            success: false,
             error: {
-              status: "unauthorized",
               message: body?.message ?? "Invalid email or password",
+              status: "unauthorized",
             },
+            success: false,
           };
         }
-        if (err.status === 422) {
+        if (error.status === 422) {
           return {
-            success: false,
             error: {
-              status: "validation",
-              message: "Validation failed",
               errors: body?.errors,
+              message: "Validation failed",
+              status: "validation",
             },
+            success: false,
           };
         }
       }
       return {
-        success: false,
         error: {
-          status: "unknown",
           message:
-            err instanceof Error ? err.message : "An unexpected error occurred",
+            error instanceof Error
+              ? error.message
+              : "An unexpected error occurred",
+          status: "unknown",
         },
+        success: false,
       };
     }
   };
 
   /**
-   * Check whether the application needs first-time setup.
+   * @description Check whether the application needs first-time setup.
    *
    * GETs /api/setup/status (unauthenticated endpoint). Returns whether any
    * users exist in the database. Used by the auth route guard to decide whether
    * to show the registration or login page.
    *
    * @returns `ApiResult`:
+   *
    *   - success: `{ needsSetup: boolean }`.
    *   - `unknown`: the request failed (network error, server error).
    */
   const checkSetupStatus = async () => {
     try {
       const data = await $fetch<SystemStatusResponse>("/api/setup/status");
-      return { success: true, data };
-    } catch (err: unknown) {
+      return { data, success: true };
+    } catch (error: unknown) {
       return {
-        success: false,
         error: {
-          status: "unknown",
           message:
-            err instanceof Error ? err.message : "An unexpected error occurred",
+            error instanceof Error
+              ? error.message
+              : "An unexpected error occurred",
+          status: "unknown",
         },
+        success: false,
       };
     }
   };
 
   /**
-   * Log the current user out.
+   * @description Log the current user out.
    *
    * Clears the `token` cookie (via `useCookie`) and resets the reactive `user`
    * state to `null`. The calling page is responsible for redirecting (e.g. to
@@ -254,16 +266,16 @@ export const useAuth = () => {
     user.value = null;
   };
 
-  /** Whether a user is currently logged in. Derived from `user !== null`. */
+  /** @description Whether a user is currently logged in. Derived from `user !== null`. */
   const isAuthenticated = computed(() => user.value !== null);
 
   return {
-    /** The currently authenticated user, or `null` if not logged in. */
-    user: readonly(user),
-    register,
-    login,
     checkSetupStatus,
-    logout,
     isAuthenticated,
+    login,
+    logout,
+    register,
+    /** @description The currently authenticated user, or `null` if not logged in. */
+    user: readonly(user),
   };
 };
