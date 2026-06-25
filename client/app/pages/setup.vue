@@ -41,16 +41,16 @@ const { register } = useAuth();
 const validate = (state: { email: string; password: string }) => {
   const errors: { name: string; message: string }[] = [];
   if (!state.email) {
-    errors.push({ name: "email", message: "Email is required" });
+    errors.push({ message: "Email is required", name: "email" });
   } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(state.email)) {
-    errors.push({ name: "email", message: "Invalid email format" });
+    errors.push({ message: "Invalid email format", name: "email" });
   }
   if (!state.password) {
-    errors.push({ name: "password", message: "Password is required" });
+    errors.push({ message: "Password is required", name: "password" });
   } else if (state.password.length < 8) {
     errors.push({
-      name: "password",
       message: "Password must be at least 8 characters",
+      name: "password",
     });
   }
   return errors;

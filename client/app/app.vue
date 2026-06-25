@@ -7,7 +7,7 @@ if (token.value) {
     if (segment) {
       const payload = JSON.parse(atob(segment));
       if (typeof payload.sub === "string" && typeof payload.email === "string") {
-        user.value = { id: payload.sub, email: payload.email };
+        user.value = { email: payload.email, id: payload.sub };
       } else {
         token.value = null;
       }

@@ -118,40 +118,40 @@ export const useAuth = () => {
   const register = async (email: string, password: string) => {
     try {
       const data = await $fetch<RegisterResponse>("/api/users/register", {
-        method: "POST",
         body: { email, password },
+        method: "POST",
       });
-      return { success: true, data };
-    } catch (err: unknown) {
-      if (err instanceof FetchError) {
-        const body = err.data as ApiErrorBody | undefined;
-        if (err.status === 409) {
+      return { data, success: true };
+    } catch (error: unknown) {
+      if (error instanceof FetchError) {
+        const body = error.data as ApiErrorBody | undefined;
+        if (error.status === 409) {
           return {
-            success: false,
             error: {
-              status: "conflict",
               message: body?.message ?? "Email already registered",
+              status: "conflict",
             },
+            success: false,
           };
         }
-        if (err.status === 422) {
+        if (error.status === 422) {
           return {
-            success: false,
             error: {
-              status: "validation",
-              message: "Validation failed",
               errors: body?.errors,
+              message: "Validation failed",
+              status: "validation",
             },
+            success: false,
           };
         }
       }
       return {
-        success: false,
         error: {
-          status: "unknown",
           message:
-            err instanceof Error ? err.message : "An unexpected error occurred",
+            error instanceof Error ? error.message : "An unexpected error occurred",
+          status: "unknown",
         },
+        success: false,
       };
     }
   };
@@ -173,43 +173,43 @@ export const useAuth = () => {
   const login = async (email: string, password: string) => {
     try {
       const data = await $fetch<LoginResponse>("/api/users/login", {
-        method: "POST",
         body: { email, password },
+        method: "POST",
       });
       const token = useCookie("token");
       token.value = data.token;
-      user.value = { id: data.id, email: data.email };
-      return { success: true, data };
-    } catch (err: unknown) {
-      if (err instanceof FetchError) {
-        const body = err.data as ApiErrorBody | undefined;
-        if (err.status === 401) {
+      user.value = { email: data.email, id: data.id };
+      return { data, success: true };
+    } catch (error: unknown) {
+      if (error instanceof FetchError) {
+        const body = error.data as ApiErrorBody | undefined;
+        if (error.status === 401) {
           return {
-            success: false,
             error: {
-              status: "unauthorized",
               message: body?.message ?? "Invalid email or password",
+              status: "unauthorized",
             },
+            success: false,
           };
         }
-        if (err.status === 422) {
+        if (error.status === 422) {
           return {
-            success: false,
             error: {
-              status: "validation",
-              message: "Validation failed",
               errors: body?.errors,
+              message: "Validation failed",
+              status: "validation",
             },
+            success: false,
           };
         }
       }
       return {
-        success: false,
         error: {
-          status: "unknown",
           message:
-            err instanceof Error ? err.message : "An unexpected error occurred",
+            error instanceof Error ? error.message : "An unexpected error occurred",
+          status: "unknown",
         },
+        success: false,
       };
     }
   };
@@ -228,15 +228,15 @@ export const useAuth = () => {
   const checkSetupStatus = async () => {
     try {
       const data = await $fetch<SystemStatusResponse>("/api/setup/status");
-      return { success: true, data };
-    } catch (err: unknown) {
+      return { data, success: true };
+    } catch (error: unknown) {
       return {
-        success: false,
         error: {
-          status: "unknown",
           message:
-            err instanceof Error ? err.message : "An unexpected error occurred",
+            error instanceof Error ? error.message : "An unexpected error occurred",
+          status: "unknown",
         },
+        success: false,
       };
     }
   };
@@ -258,12 +258,12 @@ export const useAuth = () => {
   const isAuthenticated = computed(() => user.value !== null);
 
   return {
+    checkSetupStatus,
+    isAuthenticated,
+    login,
+    logout,
+    register,
     /** The currently authenticated user, or `null` if not logged in. */
     user: readonly(user),
-    register,
-    login,
-    checkSetupStatus,
-    logout,
-    isAuthenticated,
   };
 };

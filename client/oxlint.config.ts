@@ -1,20 +1,15 @@
 import { defineConfig } from "oxlint";
 
 export default defineConfig({
-  plugins: [
-    "typescript",
-    "unicorn",
-    "oxc",
-    "vue",
-    "jsdoc",
-    "vitest",
-    "eslint",
-    "import",
-  ],
   categories: {
     correctness: "error",
+    nursery: "error",
+    pedantic: "warn",
+    perf: "warn",
+    restriction: "warn",
+    style: "warn",
+    suspicious: "warn",
   },
-  rules: {},
   env: {
     browser: true,
     builtin: true,
@@ -25,6 +20,16 @@ export default defineConfig({
     typeAware: true,
     typeCheck: true,
   },
+  plugins: [
+    "typescript",
+    "unicorn",
+    "oxc",
+    "vue",
+    "jsdoc",
+    "vitest",
+    "eslint",
+    "import",
+  ],
   settings: {
     jsdoc: {
       augmentsExtendsReplacesDocs: true,

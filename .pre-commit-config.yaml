@@ -16,3 +16,21 @@ repos:
     hooks:
       - id: crisp
         name: lint commit messages
+
+  - repo: local
+    hooks:
+      - id: oxfmt-check
+        name: oxfmt check (client)
+        entry: pnpm --prefix client fmt:check
+        language: system
+        files: ^client/
+        types_or: [javascript, ts, tsx, vue, css, html, json, markdown]
+        pass_filenames: false
+
+      - id: oxlint
+        name: oxlint (client)
+        entry: pnpm --prefix client lint
+        language: system
+        files: ^client/
+        types_or: [javascript, ts, tsx, vue]
+        pass_filenames: false
