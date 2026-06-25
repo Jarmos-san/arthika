@@ -29,7 +29,8 @@ jobs:
       - name: Install Dependencies
         run: pnpm install --frozen-lockfile
 
-      # Linting tools to be added later
+      - name: Enforce Linting Rules
+        run: pnpm run lint
 
   formatters:
     name: Formatters
