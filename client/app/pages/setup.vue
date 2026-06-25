@@ -1,13 +1,10 @@
 <script setup lang="ts">
   /**
-   * @description Setup page — first-time admin account creation.
-   *
-   * This page is shown when the application has no users and requires initial
-   * setup. It presents a registration form (email + password) that calls the
-   * `/api/users/register` endpoint via the `useAuth` composable.
-   *
-   * On success the UI transitions to a success state and auto-redirects to the
-   * login page after a brief delay.
+   * @description Setup page — first-time admin account creation. This page is shown when the
+   * application has no users and requires initial setup. It presents a
+   * registration form (email + password) that calls the `/api/users/register`
+   * endpoint via the `useAuth` composable. On success the UI transitions to a
+   * success state and auto-redirects to the login page after a brief delay.
    *
    * @see {@link useAuth#register} for the underlying API call and error handling.
    * @see /api/openapi.yml for the POST /api/users/register endpoint contract.
@@ -28,11 +25,10 @@
   const { register } = useAuth();
 
   /**
-   * @description Client-side form validation for the setup form.
-   *
-   * Checks that the email is non-empty and matches a basic email regex, and that
-   * the password is non-empty and at least 8 characters long. Matches the
-   * validation rules expected by `UForm`.
+   * @description Client-side form validation for the setup form. Checks that the email is
+   * non-empty and matches a basic email regex, and that the password is
+   * non-empty and at least 8 characters long. Matches the validation rules
+   * expected by `UForm`.
    *
    * @param state - The current form state.
    *
@@ -58,11 +54,10 @@
   };
 
   /**
-   * @description Handle form submission.
-   *
-   * Calls `useAuth().register()` with the current email and password. On failure
-   * the server error message is displayed below the form. On success the UI
-   * switches to the success state and auto-redirects to /login after 2 seconds.
+   * @description Handle form submission. Calls `useAuth().register()` with the current email
+   * and password. On failure the server error message is displayed below the
+   * form. On success the UI switches to the success state and auto-redirects to
+   * /login after 2 seconds.
    */
   const onSubmit = async () => {
     submitting.value = true;
