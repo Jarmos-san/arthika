@@ -84,7 +84,7 @@ type ApiResult<T> =
  *
  * @returns An object containing:
  *
-   *   - `user` — reactive `User | undefined`, read-only.
+ *   - `user` — reactive `User | undefined`, read-only.
  *   - `register(email, password)` — create a new account.
  *   - `login(email, password)` — authenticate and persist the session.
  *   - `checkSetupStatus()` — query whether the app needs first-time setup.
@@ -245,8 +245,8 @@ const useAuth = () => {
 
   /**
    * @description Log the current user out. Clears the `token` cookie (via `useCookie`) and
-   * resets the reactive `user` state to `undefined`. The calling page is responsible
-   * for redirecting (e.g. to /login or /setup).
+   * resets the reactive `user` state to `undefined`. The calling page is
+   * responsible for redirecting (e.g. to /login or /setup).
    */
   const logout = () => {
     const token = useCookie("token");
