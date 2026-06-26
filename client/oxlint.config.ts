@@ -25,6 +25,7 @@ export default defineConfig({
       files: ["app/composables/**/*"],
       rules: {
         "import/no-named-export": "off",
+        "typescript/explicit-module-boundary-types": "off",
         "unicorn/filename-case": "off",
       },
     },
