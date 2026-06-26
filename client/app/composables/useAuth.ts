@@ -1,38 +1,38 @@
 import { FetchError } from "ofetch";
 
 /** @description A registered user as returned by the API. */
-export interface User {
+interface User {
   id: string;
   email: string;
 }
 
 /** @description Payload for POST /api/users/register. */
-export interface RegisterRequest {
+interface RegisterRequest {
   email: string;
   password: string;
 }
 
 /** @description Response from POST /api/users/register on success (201). */
-export interface RegisterResponse {
+interface RegisterResponse {
   id: string;
   email: string;
 }
 
 /** @description Payload for POST /api/users/login. */
-export interface LoginRequest {
+interface LoginRequest {
   email: string;
   password: string;
 }
 
 /** @description Response from POST /api/users/login on success (200). */
-export interface LoginResponse {
+interface LoginResponse {
   token: string;
   id: string;
   email: string;
 }
 
 /** @description Response from GET /api/setup/status. */
-export interface SystemStatusResponse {
+interface SystemStatusResponse {
   needsSetup: boolean;
 }
 
@@ -43,7 +43,7 @@ interface ApiErrorBody {
 }
 
 /** @description A single field-level validation error returned by the API (422). */
-export interface ValidationError {
+interface ValidationError {
   field: string;
   message: string;
 }
@@ -53,7 +53,7 @@ export interface ValidationError {
  * distinguishes the error category so callers can handle each case
  * appropriately (e.g. show inline validation errors vs. a generic banner).
  */
-export interface ApiError {
+interface ApiError {
   status: "validation" | "conflict" | "unauthorized" | "unknown";
   message: string;
   errors?: ValidationError[];
@@ -65,7 +65,7 @@ export interface ApiError {
  * with a structured error. Using a discriminated union forces consumers to
  * check `success` before accessing `data`, preventing runtime type errors.
  */
-export type ApiResult<T> =
+type ApiResult<T> =
   | { success: true; data: T }
   | { success: false; error: ApiError };
 
@@ -91,7 +91,7 @@ export type ApiResult<T> =
  *   - `logout()` — clear the session.
  *   - `isAuthenticated` — computed boolean derived from `user`.
  */
-export const useAuth = () => {
+const useAuth = () => {
   const user = useState<User | undefined>("auth-user", () => undefined);
 
   /**
@@ -266,3 +266,17 @@ export const useAuth = () => {
     user: readonly(user),
   };
 };
+
+export type {
+  ApiError,
+  ApiResult,
+  LoginRequest,
+  LoginResponse,
+  RegisterRequest,
+  RegisterResponse,
+  SystemStatusResponse,
+  User,
+  ValidationError,
+};
+
+export { useAuth };
