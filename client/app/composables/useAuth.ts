@@ -84,7 +84,7 @@ export type ApiResult<T> =
  *
  * @returns An object containing:
  *
- *   - `user` — reactive `User | null`, read-only.
+   *   - `user` — reactive `User | undefined`, read-only.
  *   - `register(email, password)` — create a new account.
  *   - `login(email, password)` — authenticate and persist the session.
  *   - `checkSetupStatus()` — query whether the app needs first-time setup.
@@ -92,7 +92,7 @@ export type ApiResult<T> =
  *   - `isAuthenticated` — computed boolean derived from `user`.
  */
 export const useAuth = () => {
-  const user = useState<User | null>("auth-user", () => null);
+  const user = useState<User | undefined>("auth-user", () => undefined);
 
   /**
    * @description Register a new user account. POSTs to /api/users/register with the provided
@@ -243,17 +243,18 @@ export const useAuth = () => {
 
   /**
    * @description Log the current user out. Clears the `token` cookie (via `useCookie`) and
-   * resets the reactive `user` state to `null`. The calling page is responsible
+   * resets the reactive `user` state to `undefined`. The calling page is responsible
    * for redirecting (e.g. to /login or /setup).
    */
   const logout = () => {
     const token = useCookie("token");
+    // oxlint-disable-next-line unicorn/no-null
     token.value = null;
-    user.value = null;
+    user.value = undefined;
   };
 
-  /** @description Whether a user is currently logged in. Derived from `user !== null`. */
-  const isAuthenticated = computed(() => user.value !== null);
+  /** @description Whether a user is currently logged in. Derived from `user !== undefined`. */
+  const isAuthenticated = computed(() => user.value !== undefined);
 
   return {
     checkSetupStatus,
@@ -261,7 +262,7 @@ export const useAuth = () => {
     login,
     logout,
     register,
-    /** @description The currently authenticated user, or `null` if not logged in. */
+    /** @description The currently authenticated user, or `undefined` if not logged in. */
     user: readonly(user),
   };
 };
