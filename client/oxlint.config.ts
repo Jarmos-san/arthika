@@ -20,9 +20,6 @@ export default defineConfig({
     typeAware: true,
     typeCheck: true,
   },
-  rules: {
-    "eslint/no-undefined": "off",
-  },
   overrides: [
     {
       files: ["app/composables/**/*"],
@@ -48,6 +45,21 @@ export default defineConfig({
     "eslint",
     "import",
   ],
+  globals: {
+    $fetch: "readonly",
+    computed: "readonly",
+    navigateTo: "readonly",
+    reactive: "readonly",
+    readonly: "readonly",
+    ref: "readonly",
+    useAuth: "readonly",
+    useCookie: "readonly",
+    useState: "readonly",
+  },
+  rules: {
+    "eslint/no-undefined": "off",
+    "unicorn/no-useless-undefined": "off",
+  },
   settings: {
     jsdoc: {
       augmentsExtendsReplacesDocs: true,
