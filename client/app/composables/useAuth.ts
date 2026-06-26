@@ -42,7 +42,7 @@ interface ApiErrorBody {
   errors?: ValidationError[];
 }
 
-/** @description A single field-level validation error returned by the API (422). */
+/** @description A field-level validation error returned by the API (422). */
 interface ValidationError {
   field: string;
   message: string;
@@ -65,8 +65,8 @@ interface ApiError {
  * with a structured error. Using a discriminated union forces consumers to
  * check `success` before accessing `data`, preventing runtime type errors.
  */
-type ApiResult<T> =
-  | { success: true; data: T }
+type ApiResult<Data> =
+  | { success: true; data: Data }
   | { success: false; error: ApiError };
 
 /**
@@ -82,7 +82,7 @@ type ApiResult<T> =
  *   if (result.success) { /* redirect to login *\/ }
  *   ```;
  *
- * @returns An object containing:
+ * @returns {object} An object containing:
  *
  *   - `user` — reactive `User | undefined`, read-only.
  *   - `register(email, password)` — create a new account.
@@ -100,10 +100,10 @@ const useAuth = () => {
    * persisted — the caller should redirect to /login so the user authenticates
    * with their new account.
    *
-   * @param email - User's email address.
-   * @param password - User's password (minimum 8 characters).
+   * @param {string} email - User's email address.
+   * @param {string} password - User's password (minimum 8 characters).
    *
-   * @returns `ApiResult`:
+   * @returns {ApiResult} `ApiResult`:
    *
    *   - success: the created user's id and email.
    *   - `conflict` (409): the email is already registered.
@@ -142,7 +142,7 @@ const useAuth = () => {
       }
       let message: string;
       if (error instanceof Error) {
-        message = error.message;
+        ({ message } = error);
       } else {
         message = "An unexpected error occurred";
       }
@@ -161,10 +161,10 @@ const useAuth = () => {
    * credentials. On success the JWT is persisted in a `token` cookie (via
    * `useCookie`) and the user's reactive state is updated.
    *
-   * @param email - User's email address.
-   * @param password - User's password.
+   * @param {string} email - User's email address.
+   * @param {string} password - User's password.
    *
-   * @returns `ApiResult`:
+   * @returns {ApiResult} `ApiResult`:
    *
    *   - success: the JWT token, user id, and email.
    *   - `unauthorized` (401): the email or password is incorrect.
@@ -206,7 +206,7 @@ const useAuth = () => {
       }
       let message: string;
       if (error instanceof Error) {
-        message = error.message;
+        ({ message } = error);
       } else {
         message = "An unexpected error occurred";
       }
@@ -226,7 +226,7 @@ const useAuth = () => {
    * exist in the database. Used by the auth route guard to decide whether to
    * show the registration or login page.
    *
-   * @returns `ApiResult`:
+   * @returns {ApiResult} `ApiResult`:
    *
    *   - success: `{ needsSetup: boolean }`.
    *   - `unknown`: the request failed (network error, server error).
@@ -238,7 +238,7 @@ const useAuth = () => {
     } catch (error: unknown) {
       let message: string;
       if (error instanceof Error) {
-        message = error.message;
+        ({ message } = error);
       } else {
         message = "An unexpected error occurred";
       }
@@ -257,7 +257,7 @@ const useAuth = () => {
    * resets the reactive `user` state to `undefined`. The calling page is
    * responsible for redirecting (e.g. to /login or /setup).
    */
-  const logout = () => {
+  const logout = (): void => {
     const token = useCookie("token");
     // oxlint-disable-next-line unicorn/no-null
     token.value = null;

@@ -16,6 +16,17 @@ export default defineConfig({
     vitest: true,
     vue: true,
   },
+  globals: {
+    $fetch: "readonly",
+    computed: "readonly",
+    navigateTo: "readonly",
+    reactive: "readonly",
+    readonly: "readonly",
+    ref: "readonly",
+    useAuth: "readonly",
+    useCookie: "readonly",
+    useState: "readonly",
+  },
   options: {
     typeAware: true,
     typeCheck: true,
@@ -27,6 +38,7 @@ export default defineConfig({
         "import/no-named-export": "off",
         "typescript/explicit-module-boundary-types": "off",
         "unicorn/filename-case": "off",
+        "unicorn/prefer-ternary": "off",
       },
     },
     {
@@ -46,19 +58,10 @@ export default defineConfig({
     "eslint",
     "import",
   ],
-  globals: {
-    $fetch: "readonly",
-    computed: "readonly",
-    navigateTo: "readonly",
-    reactive: "readonly",
-    readonly: "readonly",
-    ref: "readonly",
-    useAuth: "readonly",
-    useCookie: "readonly",
-    useState: "readonly",
-  },
   rules: {
+    "eslint/no-ternary": "off",
     "eslint/no-undefined": "off",
+    "oxc/no-async-await": "off",
     "unicorn/no-useless-undefined": "off",
   },
   settings: {
