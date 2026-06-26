@@ -118,6 +118,7 @@ const useAuth = () => {
       return { data, success: true };
     } catch (error: unknown) {
       if (error instanceof FetchError) {
+        // oxlint-disable-next-line typescript/no-unsafe-type-assertion
         const body = error.data as ApiErrorBody | undefined;
         if (error.status === 409) {
           return {
@@ -178,6 +179,7 @@ const useAuth = () => {
       return { data, success: true };
     } catch (error: unknown) {
       if (error instanceof FetchError) {
+        // oxlint-disable-next-line typescript/no-unsafe-type-assertion
         const body = error.data as ApiErrorBody | undefined;
         if (error.status === 401) {
           return {

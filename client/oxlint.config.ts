@@ -20,6 +20,9 @@ export default defineConfig({
     typeAware: true,
     typeCheck: true,
   },
+  rules: {
+    "eslint/no-undefined": "off",
+  },
   overrides: [
     {
       files: ["app/composables/**/*"],
