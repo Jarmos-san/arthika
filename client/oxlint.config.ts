@@ -24,6 +24,7 @@ export default defineConfig({
     {
       files: ["app/composables/**/*"],
       rules: {
+        "import/no-named-export": "off",
         "unicorn/filename-case": "off",
       },
     },
