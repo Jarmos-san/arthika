@@ -62,6 +62,7 @@ export default defineConfig({
     "eslint/no-ternary": "off",
     "eslint/no-undefined": "off",
     "oxc/no-async-await": "off",
+    "typescript/explicit-function-return-type": "off",
     "unicorn/no-useless-undefined": "off",
   },
   settings: {
