@@ -127,7 +127,7 @@ const useAuth = () => {
         if (error.status === STATUS_CONFLICT) {
           return {
             error: {
-              message: body?.message ?? "Email already registered",
+              message: body ? body.message : "Email already registered",
               status: "conflict",
             },
             success: false,
@@ -136,7 +136,7 @@ const useAuth = () => {
         if (error.status === STATUS_UNPROCESSABLE_ENTITY) {
           return {
             error: {
-              errors: body?.errors,
+              errors: body ? body.errors : undefined,
               message: "Validation failed",
               status: "validation",
             },
@@ -187,7 +187,7 @@ const useAuth = () => {
         if (error.status === STATUS_UNAUTHORIZED) {
           return {
             error: {
-              message: body?.message ?? "Invalid email or password",
+              message: body ? body.message : "Invalid email or password",
               status: "unauthorized",
             },
             success: false,
@@ -196,7 +196,7 @@ const useAuth = () => {
         if (error.status === STATUS_UNPROCESSABLE_ENTITY) {
           return {
             error: {
-              errors: body?.errors,
+              errors: body ? body.errors : undefined,
               message: "Validation failed",
               status: "validation",
             },
