@@ -70,7 +70,7 @@
     const result = await register(state.email, state.password);
 
     if (!result.success) {
-      serverError.value = (result.error! as ApiError).message;
+      serverError.value = result.error.message;
       submitting.value = false;
       return;
     }
