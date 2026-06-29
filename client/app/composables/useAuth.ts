@@ -1,5 +1,9 @@
 import { FetchError } from "ofetch";
 
+const STATUS_CONFLICT = 409;
+const STATUS_UNPROCESSABLE_ENTITY = 422;
+const STATUS_UNAUTHORIZED = 401;
+
 /** @description A registered user as returned by the API. */
 interface User {
   id: string;
@@ -120,7 +124,7 @@ const useAuth = () => {
       if (error instanceof FetchError) {
         // oxlint-disable-next-line typescript/no-unsafe-type-assertion
         const body = error.data as ApiErrorBody | undefined;
-        if (error.status === 409) {
+        if (error.status === STATUS_CONFLICT) {
           return {
             error: {
               message: body?.message ?? "Email already registered",
@@ -129,7 +133,7 @@ const useAuth = () => {
             success: false,
           };
         }
-        if (error.status === 422) {
+        if (error.status === STATUS_UNPROCESSABLE_ENTITY) {
           return {
             error: {
               errors: body?.errors,
@@ -180,7 +184,7 @@ const useAuth = () => {
       if (error instanceof FetchError) {
         // oxlint-disable-next-line typescript/no-unsafe-type-assertion
         const body = error.data as ApiErrorBody | undefined;
-        if (error.status === 401) {
+        if (error.status === STATUS_UNAUTHORIZED) {
           return {
             error: {
               message: body?.message ?? "Invalid email or password",
@@ -189,7 +193,7 @@ const useAuth = () => {
             success: false,
           };
         }
-        if (error.status === 422) {
+        if (error.status === STATUS_UNPROCESSABLE_ENTITY) {
           return {
             error: {
               errors: body?.errors,

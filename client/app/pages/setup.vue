@@ -10,6 +10,9 @@
    * @see /api/openapi.yml for the POST /api/users/register endpoint contract.
    */
 
+  const MIN_PASSWORD_LENGTH = 8;
+  const REDIRECT_DELAY_MS = 2000;
+
   /** @description Tracks the current UI step: registration form or post-submit success. */
   const step = ref<"form" | "success">("form");
 
@@ -44,7 +47,7 @@
     }
     if (!state.password) {
       errors.push({ message: "Password is required", name: "password" });
-    } else if (state.password.length < 8) {
+    } else if (state.password.length < MIN_PASSWORD_LENGTH) {
       errors.push({
         message: "Password must be at least 8 characters",
         name: "password",
@@ -72,7 +75,7 @@
     }
 
     step.value = "success";
-    setTimeout(() => navigateTo("/login"), 2000);
+    setTimeout(() => navigateTo("/login"), REDIRECT_DELAY_MS);
     submitting.value = false;
 
     submitting.value = false;
