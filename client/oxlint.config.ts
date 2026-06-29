@@ -47,6 +47,12 @@ export default defineConfig({
         "import/no-default-export": "off",
       },
     },
+    {
+      files: ["*.vue"],
+      rules: {
+        "import/unambiguous": "off",
+      },
+    },
   ],
   plugins: [
     "typescript",
