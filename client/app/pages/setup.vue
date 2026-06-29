@@ -33,10 +33,11 @@
    * non-empty and at least 8 characters long. Matches the validation rules
    * expected by `UForm`.
    *
-   * @param state - The current form state.
+   * @param {{ email: string; password: string }} form - The current form state.
    *
-   * @returns An array of error objects, each with a `name` (field name) and
-   *   `message`. An empty array means the form is valid.
+   * @returns {{ name: string; message: string }[]} An array of error objects,
+   *   each with a `name` (field name) and `message`. An empty array means the
+   *   form is valid.
    */
   const validate = (form: { email: string; password: string }) => {
     const errors: { name: string; message: string }[] = [];
