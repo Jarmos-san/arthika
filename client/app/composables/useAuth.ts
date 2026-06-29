@@ -140,12 +140,8 @@ const useAuth = () => {
           };
         }
       }
-      let message: string;
-      if (error instanceof Error) {
-        ({ message } = error);
-      } else {
-        message = "An unexpected error occurred";
-      }
+      const message =
+        error instanceof Error ? error.message : "An unexpected error occurred";
       return {
         error: {
           message,
@@ -204,12 +200,8 @@ const useAuth = () => {
           };
         }
       }
-      let message: string;
-      if (error instanceof Error) {
-        ({ message } = error);
-      } else {
-        message = "An unexpected error occurred";
-      }
+      const message =
+        error instanceof Error ? error.message : "An unexpected error occurred";
       return {
         error: {
           message,
@@ -236,12 +228,8 @@ const useAuth = () => {
       const data = await $fetch<SystemStatusResponse>("/api/setup/status");
       return { data, success: true };
     } catch (error: unknown) {
-      let message: string;
-      if (error instanceof Error) {
-        ({ message } = error);
-      } else {
-        message = "An unexpected error occurred";
-      }
+      const message =
+        error instanceof Error ? error.message : "An unexpected error occurred";
       return {
         error: {
           message,
