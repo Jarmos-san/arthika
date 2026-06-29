@@ -43,7 +43,7 @@
     const errors: { name: string; message: string }[] = [];
     if (!form.email) {
       errors.push({ message: "Email is required", name: "email" });
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/u.test(form.email)) {
       errors.push({ message: "Invalid email format", name: "email" });
     }
     if (!form.password) {
