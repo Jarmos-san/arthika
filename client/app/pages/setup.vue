@@ -38,16 +38,16 @@
    * @returns An array of error objects, each with a `name` (field name) and
    *   `message`. An empty array means the form is valid.
    */
-  const validate = (state: { email: string; password: string }) => {
+  const validate = (form: { email: string; password: string }) => {
     const errors: { name: string; message: string }[] = [];
-    if (!state.email) {
+    if (!form.email) {
       errors.push({ message: "Email is required", name: "email" });
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(state.email)) {
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
       errors.push({ message: "Invalid email format", name: "email" });
     }
-    if (!state.password) {
+    if (!form.password) {
       errors.push({ message: "Password is required", name: "password" });
-    } else if (state.password.length < MIN_PASSWORD_LENGTH) {
+    } else if (form.password.length < MIN_PASSWORD_LENGTH) {
       errors.push({
         message: "Password must be at least 8 characters",
         name: "password",
