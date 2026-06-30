@@ -36,12 +36,6 @@ export interface SystemStatusResponse {
   needsSetup: boolean;
 }
 
-/** @description Shape of the JSON body returned by the API on error. */
-interface ApiErrorBody {
-  message?: string;
-  errors?: ValidationError[];
-}
-
 /** @description A single field-level validation error returned by the API (422). */
 export interface ValidationError {
   field: string;
@@ -118,22 +112,18 @@ export const useAuth = () => {
       return { data, success: true };
     } catch (error: unknown) {
       if (error instanceof FetchError) {
-        const body = error.data as ApiErrorBody | undefined;
-        if (error.status === 409) {
+        const body =
+          typeof error.data === "object" && error.data !== null
+            ? error.data
+            : undefined;
+        if (error.status === 400) {
           return {
             error: {
-              message: body?.message ?? "Email already registered",
+              message:
+                typeof body?.message === "string"
+                  ? body.message
+                  : "Email already registered",
               status: "conflict",
-            },
-            success: false,
-          };
-        }
-        if (error.status === 422) {
-          return {
-            error: {
-              errors: body?.errors,
-              message: "Validation failed",
-              status: "validation",
             },
             success: false,
           };
@@ -178,11 +168,17 @@ export const useAuth = () => {
       return { data, success: true };
     } catch (error: unknown) {
       if (error instanceof FetchError) {
-        const body = error.data as ApiErrorBody | undefined;
+        const body =
+          typeof error.data === "object" && error.data !== null
+            ? error.data
+            : undefined;
         if (error.status === 401) {
           return {
             error: {
-              message: body?.message ?? "Invalid email or password",
+              message:
+                typeof body?.message === "string"
+                  ? body.message
+                  : "Invalid email or password",
               status: "unauthorized",
             },
             success: false,
