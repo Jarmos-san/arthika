@@ -17,10 +17,10 @@ export default defineConfig({
     correctness: "error",
     // nursery: "error",
     // pedantic: "warn",
-    // perf: "warn",
+    perf: "error",
     // restriction: "error",
     // style: "warn",
-    // suspicious: "error",
+    suspicious: "error",
   },
   rules: {},
   env: {
