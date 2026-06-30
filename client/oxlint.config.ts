@@ -1,39 +1,45 @@
 import { defineConfig } from "oxlint";
 
 export default defineConfig({
+  plugins: [
+    "typescript",
+    "unicorn",
+    "oxc",
+    "eslint",
+    "import",
+    "jsdoc",
+    "vitest",
+    "promise",
+    "node",
+    "vue",
+  ],
   categories: {
     correctness: "error",
-    nursery: "error",
-    pedantic: "warn",
-    perf: "warn",
-    restriction: "warn",
-    style: "warn",
-    suspicious: "warn",
+    // nursery: "error",
+    // pedantic: "warn",
+    // perf: "warn",
+    // restriction: "error",
+    // style: "warn",
+    // suspicious: "error",
   },
+  rules: {},
   env: {
-    browser: true,
+    amd: true,
     builtin: true,
+    "shared-node-browser": true,
     vitest: true,
     vue: true,
   },
   options: {
     typeAware: true,
     typeCheck: true,
+    maxWarnings: 10,
+    reportUnusedDisableDirectives: "error",
+    respectEslintDisableDirectives: false,
   },
-  plugins: [
-    "typescript",
-    "unicorn",
-    "oxc",
-    "vue",
-    "jsdoc",
-    "vitest",
-    "eslint",
-    "import",
-  ],
   settings: {
-    jsdoc: {
-      augmentsExtendsReplacesDocs: true,
-      exemptDestructuredRootsFromChecks: true,
+    vitest: {
+      typecheck: true,
     },
   },
 });
