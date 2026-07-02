@@ -2,17 +2,34 @@
 
 ## Quick start
 
-```bash
-go test ./server/...        # all tests (t.Parallel(), black-box)
-task lint                   # golangci-lint v2, all linters
-task migrate:up             # apply pending DB migrations
-go run ./server/cmd/server  # start server on :8000
-task generate               # re-generate sqlc code
+### Server
 
+```bash
+task server:test            # go test ./... (t.Parallel(), black-box)
+task server:lint            # golangci-lint v2, all linters
+task migrate:up             # apply pending DB migrations (requires `migrate` CLI)
+task migrate:down           # roll back all down migrations
+task migrate:reset          # down then up
+task oapi:gen               # generate server Go stubs + client TypeScript types from OpenAPI spec
+go run ./server/cmd/server  # start server on :8000
+```
+
+### Client
+
+```bash
 cd client && pnpm dev        # Nuxt 4 dev server
-cd client && pnpm typecheck  # vue-tsc --noEmit
+cd client && pnpm typecheck  # vue-tsc --noEmit (requires .nuxt/ — run `pnpm install` first)
+cd client && pnpm lint       # oxlint
+cd client && pnpm fmt        # oxfmt
+pnpm install --frozen-lockfile  # install deps (used in CI and setup)
 
 pre-commit install           # install git hooks (includes crisp for commit messages)
+```
+
+### Single test
+
+```bash
+go test ./server/internal/handler/ -run TestRegister_Success
 ```
 
 ## Architecture
@@ -26,36 +43,48 @@ pre-commit install           # install git hooks (includes crisp for commit mess
 - Logging: `slog` JSON handler to stdout
 - Config from env vars: `ADDR`, `READ_TIMEOUT`, `WRITE_TIMEOUT`, `IDLE_TIMEOUT`, `LOG_LEVEL`, `TOKEN_SECRET`, `DATABASE_URL`, `MIGRATIONS_DIR`
 - Database: SQLite via `golang-migrate` (auto-applied at startup)
+- Docs: served at `/docs` (Redoc UI) and `/openapi.json`
 
 ## Code generation
 
+Three generators, run in this order when the OpenAPI spec changes:
+
 ```bash
-task generate                       # sqlc generate (reads sqlc.yaml, writes internal/repository/)
-oapi-codegen -config oapi-codegen.yml api/openapi.yml   # writes internal/api/server.gen.go
+cd server && sqlc generate                            # reads db/query/*.sql → internal/repository/
+cd server && oapi-codegen -config oapi-codegen.yml api/openapi.yml  # → internal/api/server.gen.go
+cd client && pnpm run openapi:generate                # kubb reads server api/openapi.yml → client/generated/
 ```
 
-Run codegen after changing `db/query/*.sql` (sqlc) or `api/openapi.yml` (oapi-codegen), then commit generated files.
+Shortcut: `task oapi:gen` runs server + client OpenAPI generation.
+
+**Note:** `task server:generate` exists but has a bug — it references a non-existent `oapi-codegen` subtask. Use `task oapi:gen` instead for OpenAPI codegen.
+
+Run codegen after changing `db/query/*.sql` (sqlc), `api/openapi.yml` (oapi-codegen or kubb), then commit generated files.
 
 ## Client
 
 - Nuxt 4 with `ssr: false` (SPA mode), `@nuxt/ui`, `vue-router`
 - Package manager: `pnpm` (lockfile `pnpm-lock.yaml`)
-- Commands: `pnpm dev` / `pnpm build` / `pnpm typecheck` / `pnpm generate`
+- Linting: `oxlint` (`pnpm lint`)
+- Formatting: `oxfmt` (`pnpm fmt`, `pnpm fmt:check`)
+- TypeScript OpenAPI client: `kubb` (`pnpm run openapi:generate` → `client/generated/`)
+- Typecheck requires `.nuxt/` to exist — run `pnpm install` (or `task client:install`) first
 
 ## CI
 
 Three workflows on PR to `main`:
-- **Server QA** — lint (`golangci-lint`), test (`go test ./...`), build check
-- **Client QA** — typecheck (`vue-tsc`), build (`nuxt build`)
-- **SQL Validation** — `sqlc vet` + `sqlc diff` (ensures generated code is in sync)
+- **Server QA** — lint (`golangci-lint`), test (`go test ./...`), build check (`go build -o /dev/null ./...`)
+- **Client QA** — lint (`oxlint`), format check (`oxfmt --check`), typecheck (`vue-tsc`), build (`nuxt build`)
+- **SQL Validation** — `sqlc vet` + `sqlc diff` (ensures generated Go code is in sync)
 
 ## Testing
 
 - All tests use `t.Parallel()` and black-box packages (`_test` suffix)
-- Handler tests use `mockQuerier` implementing `repository.Querier`
-- Pre-compute bcrypt hashes (`bcrypt.MinCost`) as package-level constants to avoid slow hashing per test
-- Use `t.Context()` and `slog.DiscardHandler` / `slog.Default()`
+- Handler tests share a `mockQuerier` struct implementing `repository.Querier`
+- Pre-compute bcrypt hashes (`bcrypt.MinCost`) as package-level constants (see `login_test.go` `testPasswordHash`) to avoid slow hashing per test
+- Use `t.Context()` and `slog.Default()` (or `slog.DiscardHandler`)
 - Integration-style handler tests use `httptest.NewRecorder` + `api.NewStrictHandler`
+- Run a single test: `go test ./server/internal/handler/ -run TestRegister_Success`
 
 ## Conventions
 
@@ -64,4 +93,4 @@ Three workflows on PR to `main`:
 - Formatters: `gci`, `gofmt`, `gofumpt`, `goimports`, `golines` (via golangci-lint)
 - Migrations: `golang-migrate` CLI, naming `NNNNNN_description.{up,down}.sql`
 - Commit messages linted by `crisp` pre-commit hook
-- Pre-commit hooks: `trailing-whitespace`, `end-of-file-fixer`, `check-yaml`, `check-added-large-files`, `crisp`
+- Pre-commit hooks: `trailing-whitespace`, `end-of-file-fixer`, `check-yaml`, `check-added-large-files`, `oxfmt-check` (client), `oxlint` (client), `crisp`
