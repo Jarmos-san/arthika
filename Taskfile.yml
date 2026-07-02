@@ -11,6 +11,45 @@ tasks:
     desc: Display all available commands
     cmd: task --list
 
+  setup:server:
+    desc: Setup the server-side application for development.
+    dir: server
+    preconditions:
+      - sh: which go
+        msg: >-
+          go not found, please install it before proceeding.
+    vars:
+      SQLC_INSTALL_URL: github.com/sqlc-dev/sqlc/cmd/sqlc@latest
+      MIGRATE_INSTALL_URL: github.com/golang-migrate/migrate/v4/cmd/migrate@latest
+      OAPI_CODEGEN_INSTALL_URL: github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@latest
+    cmds:
+      - go mod download
+      - go install '{{ .SQLC_INSTALL_URL }}'
+      - go install -tags 'sqlite' '{{ .MIGRATE_INSTALL_URL }}'
+      - go install '{{ .OAPI_CODEGEN_INSTALL_URL }}'
+
+  setup:client:
+    desc: Setup the client-side application for development.
+    dir: client
+    preconditions:
+      - sh: which pnpm
+        msg: >-
+          pnpm not found, please install it first.
+    sources: [package.json]
+    generates: [pnpm-lock.yaml]
+    cmd: pnpm install --frozen-lockfile
+
+  setup:
+    desc: Setup the development environment.
+    summary: |
+      This command will set up the local development environment for both the
+      server and client-side application. It will install all the necessary
+      dependencies and prepare the environment by building/compiling the
+      application for local preview.
+    cmds:
+      - task: setup:server
+      - task: setup:client
+
   server:lint:
     desc: Run linters across the source code.
     dir: server
