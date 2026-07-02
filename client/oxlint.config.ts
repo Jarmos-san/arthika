@@ -22,7 +22,6 @@ export default defineConfig({
     // style: "warn",
     suspicious: "error",
   },
-  rules: {},
   env: {
     amd: true,
     builtin: true,
@@ -42,4 +41,12 @@ export default defineConfig({
       typecheck: true,
     },
   },
+  overrides: [
+    {
+      files: ["generated/models/*.ts"],
+      rules: {
+        "jsdoc/check-tag-names": "allow",
+      },
+    },
+  ],
 });
