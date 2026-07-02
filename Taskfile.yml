@@ -38,9 +38,18 @@ tasks:
           sqlc not found. Install with: go install
           github.com/sqlc-dev/sqlc/cmd/sqlc@latest
 
-  oapi-codegen:
+  oapi:gen:
+    desc: Generate source code from the OpenAPI spec.
+    summary: |
+      Generate type-safe and idiomic Go or TypeScript source code from the OpenAPI
+      specification.
+    cmds:
+      - task: oapi:server
+      - task: oapi:client
+
+  oapi:server:
     internal: true
-    desc: Generate Go server stubs from the OpenAPI spec
+    desc: Generate Go server stubs from the OpenAPI spec.
     dir: server
     cmd: oapi-codegen -config oapi-codegen.yml api/openapi.yml
     vars:
@@ -57,6 +66,18 @@ tasks:
         msg: >-
           oapi-codegen not found. Install with: go install
           github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@latest
+
+  oapi:client:
+    internal: true
+    desc: Generate TypeScript client stubs (type definitions) from the OpenAPI spec.
+    dir: client
+    cmd: pnpm run openapi:generate
+    sources: ["{{ .OAPI_SPEC_FILE }}"]
+    generates: ["generated/**/*.ts"]
+    preconditions:
+      - sh: which pnpm
+        msg: >-
+          pnpm is not installed.
 
   server:generate:
     desc: Run all server code generators

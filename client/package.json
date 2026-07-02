@@ -12,6 +12,7 @@
     "fmt:check": "oxfmt --check --disable-nested-config",
     "lint": "oxlint",
     "lint:fix": "oxlint --fix",
+    "openapi:generate": "KUBB_DISABLE_TELEMETRY=1 kubb generate --silent",
     "postinstall": "nuxt prepare"
   },
   "dependencies": {
@@ -21,6 +22,9 @@
     "vue-router": "^5.1.0"
   },
   "devDependencies": {
+    "@kubb/core": "5.0.0-beta.79",
+    "@kubb/plugin-ts": "5.0.0-beta.80",
+    "kubb": "5.0.0-beta.79",
     "oxfmt": "^0.56.0",
     "oxlint": "^1.71.0",
     "oxlint-tsgolint": "^0.23.0",
