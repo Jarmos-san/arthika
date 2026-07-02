@@ -12,7 +12,7 @@
     "fmt:check": "oxfmt --check --disable-nested-config",
     "lint": "oxlint",
     "lint:fix": "oxlint --fix",
-    "openapi:generate": "KUBB_DISABLE_TELEMETRY=1 kubb generate",
+    "openapi:generate": "KUBB_DISABLE_TELEMETRY=1 kubb generate --silent",
     "postinstall": "nuxt prepare"
   },
   "dependencies": {
