@@ -103,6 +103,7 @@ tags
 *.cer
 *.csr
 *.css
+!client/**/*.css
 *.htm
 *.html
 *.js
