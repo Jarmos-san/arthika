@@ -16,7 +16,7 @@
     "postinstall": "nuxt prepare"
   },
   "dependencies": {
-    "@nuxt/ui": "^3.3.7",
+    "@iconify/vue": "^5.0.1",
     "@tailwindcss/vite": "^4.3.2",
     "nuxt": "^4.4.8",
     "reka-ui": "^2.10.1",

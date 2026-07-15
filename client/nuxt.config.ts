@@ -6,12 +6,15 @@ export default defineNuxtConfig({
   future: {
     compatibilityVersion: 4,
   },
-  modules: ["@nuxt/ui", "reka-ui/nuxt"],
+  modules: ["reka-ui/nuxt"],
   ssr: false,
   typescript: {
     strict: true,
   },
   vite: {
+    optimizeDeps: {
+      include: ["@iconify/vue"],
+    },
     plugins: [tailwindcss()],
   },
 });
