@@ -319,8 +319,8 @@ Procfile          text
 *.*ignore         text
 
 # Prevents massive diffs from built files
-dist/**           binary
-client/**/*.ts    linguist-generated
+dist/**                     binary
+client/generated/**/*.ts    linguist-generated
 
 # Apply override to all files in the directory
 *.md linguist-detectable
