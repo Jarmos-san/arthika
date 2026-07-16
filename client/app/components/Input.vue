@@ -26,7 +26,7 @@
     </Label>
     <input
       v-model="model"
-      class="input-field px-3.5 py-2.5 text-sm text-stone-800 placeholder:text-stone-400"
+      class="rounded-lg border border-stone-300 bg-stone-50 px-3.5 py-2.5 text-sm text-stone-800 placeholder:text-stone-400"
       v-bind="attrs"
     />
   </div>
