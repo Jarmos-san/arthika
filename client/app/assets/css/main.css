@@ -2,7 +2,7 @@
 
 @layer components {
   .input-field {
-    @apply rounded-lg border border-stone-300 bg-stone-50/50 px-3.5 py-2.5 text-sm text-stone-800 transition-all duration-200 outline-none placeholder:text-stone-400 focus:border-stone-500 focus:bg-white focus:shadow-sm focus:ring-1 focus:ring-stone-500;
+    @apply rounded-lg border border-stone-300 bg-stone-50;
   }
 
   .btn-primary {
