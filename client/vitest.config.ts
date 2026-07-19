@@ -1,4 +1,3 @@
-// oxlint-disable eslint/sort-imports
 import { defineVitestProject } from "@nuxt/test-utils/config";
 import {
   configDefaults,
