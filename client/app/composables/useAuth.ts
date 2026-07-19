@@ -66,8 +66,9 @@ export type ApiResult<T> =
 /**
  * @description Authentication composable for Arthika. Provides reactive auth state and
  * methods for registering, logging in, checking setup status, and logging out.
- * Uses `$fetch` for API calls and `useCookie('token')` for JWT persistence.
- * Auto-imported by Nuxt 4 — no manual import needed in `.vue` files.
+ * Uses `$fetch` for API calls, `useCookie('token')` for JWT persistence, and
+ * the Pinia auth store for global state. Auto-imported by Nuxt 4 — no manual
+ * import needed in `.vue` files.
  *
  * @example
  *   ```ts
@@ -78,15 +79,14 @@ export type ApiResult<T> =
  *
  * @returns An object containing:
  *
- *   - `user` — reactive `User | null`, read-only.
  *   - `register(email, password)` — create a new account.
  *   - `login(email, password)` — authenticate and persist the session.
  *   - `checkSetupStatus()` — query whether the app needs first-time setup.
  *   - `logout()` — clear the session.
- *   - `isAuthenticated` — computed boolean derived from `user`.
+ *   - `isAuthenticated` — computed boolean derived from the Pinia store.
  */
 export const useAuth = () => {
-  const user = useState<User | null>("auth-user", () => null);
+  const store = useAuthStore();
 
   /**
    * @description Register a new user account. POSTs to /api/users/register with the provided
@@ -145,7 +145,7 @@ export const useAuth = () => {
   /**
    * @description Authenticate an existing user. POSTs to /api/users/login with the provided
    * credentials. On success the JWT is persisted in a `token` cookie (via
-   * `useCookie`) and the user's reactive state is updated.
+   * `useCookie`) and the Pinia auth store `isAuthenticated` flag is set.
    *
    * @param email - User's email address.
    * @param password - User's password.
@@ -164,7 +164,7 @@ export const useAuth = () => {
       });
       const token = useCookie("token");
       token.value = data.token;
-      user.value = { email: data.email, id: data.id };
+      store.isAuthenticated = true;
       return { data, success: true };
     } catch (error: unknown) {
       if (error instanceof FetchError) {
@@ -239,25 +239,20 @@ export const useAuth = () => {
 
   /**
    * @description Log the current user out. Clears the `token` cookie (via `useCookie`) and
-   * resets the reactive `user` state to `null`. The calling page is responsible
-   * for redirecting (e.g. to /login or /setup).
+   * resets the Pinia auth store `isAuthenticated` flag to `false`. The calling
+   * page is responsible for redirecting (e.g. to /login or /setup).
    */
   const logout = () => {
     const token = useCookie("token");
     token.value = null;
-    user.value = null;
+    store.isAuthenticated = false;
   };
-
-  /** @description Whether a user is currently logged in. Derived from `user !== null`. */
-  const isAuthenticated = computed(() => user.value !== null);
 
   return {
     checkSetupStatus,
-    isAuthenticated,
+    isAuthenticated: computed(() => store.isAuthenticated),
     login,
     logout,
     register,
-    /** @description The currently authenticated user, or `null` if not logged in. */
-    user: readonly(user),
   };
 };
