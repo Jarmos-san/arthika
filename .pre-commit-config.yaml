@@ -24,6 +24,7 @@ repos:
         args:
           - --config=client/oxlint.config.ts
           - --disable-nested-config
+        additional_dependencies: [oxlint-tsgolint]
 
   - repo: https://github.com/oxc-project/mirrors-oxfmt
     rev: v0.57.0
