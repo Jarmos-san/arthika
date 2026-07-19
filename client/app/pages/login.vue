@@ -17,8 +17,8 @@
   /** @description Reactive container for current validation errors. Reset on each submit. */
   const errors = ref<LoginErrors>({
     email: undefined,
-    password: undefined,
     general: undefined,
+    password: undefined,
   });
 
   /**
@@ -31,8 +31,8 @@
   const validate = (): boolean => {
     errors.value = {
       email: undefined,
-      password: undefined,
       general: undefined,
+      password: undefined,
     };
 
     // Email field validation

@@ -1,18 +1,6 @@
 import { defineConfig } from "oxlint";
 
 export default defineConfig({
-  plugins: [
-    "typescript",
-    "unicorn",
-    "oxc",
-    "eslint",
-    "import",
-    "jsdoc",
-    "vitest",
-    "promise",
-    "node",
-    "vue",
-  ],
   categories: {
     correctness: "error",
     nursery: "error",
@@ -30,16 +18,11 @@ export default defineConfig({
     vue: true,
   },
   options: {
-    typeAware: true,
-    typeCheck: true,
     maxWarnings: 10,
     reportUnusedDisableDirectives: "error",
     respectEslintDisableDirectives: false,
-  },
-  settings: {
-    vitest: {
-      typecheck: true,
-    },
+    typeAware: true,
+    typeCheck: true,
   },
   overrides: [
     {
@@ -48,5 +31,26 @@ export default defineConfig({
         "jsdoc/check-tag-names": "allow",
       },
     },
+    {
+      files: ["*.config.ts"],
+      rules: { "import/no-default-export": "allow" },
+    },
   ],
+  plugins: [
+    "typescript",
+    "unicorn",
+    "oxc",
+    "eslint",
+    "import",
+    "jsdoc",
+    "vitest",
+    "promise",
+    "node",
+    "vue",
+  ],
+  settings: {
+    vitest: {
+      typecheck: true,
+    },
+  },
 });

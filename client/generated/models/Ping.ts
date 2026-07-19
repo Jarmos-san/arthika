@@ -6,14 +6,14 @@ import type { PingResponse } from "./PingResponse.ts";
 export type PingStatus200 = PingResponse;
 
 /** @type object */
-export type PingRequestConfig = {
+export interface PingRequestConfig {
   body?: never;
   path?: never;
   query?: never;
   headers?: never;
-};
+}
 
 /** @type object */
-export type PingResponses = {
+export interface PingResponses {
   "200": PingStatus200;
-};
+}

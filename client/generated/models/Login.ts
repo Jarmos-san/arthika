@@ -18,16 +18,16 @@ export type LoginStatus422 = ValidationErrors;
 export type LoginData = LoginRequest;
 
 /** @type object */
-export type LoginRequestConfig = {
+export interface LoginRequestConfig {
   body: LoginData;
   path?: never;
   query?: never;
   headers?: never;
-};
+}
 
 /** @type object */
-export type LoginResponses = {
+export interface LoginResponses {
   "200": LoginStatus200;
   "401": LoginStatus401;
   "422": LoginStatus422;
-};
+}

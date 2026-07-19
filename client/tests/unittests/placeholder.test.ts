@@ -1,7 +1,9 @@
-import { describe, expect, it } from "vitest";
+vi.setConfig({ testTimeout: 10_000 });
 
 describe("placeholder", () => {
   it("passes", () => {
+    expect.hasAssertions();
+
     expect(true).toBe(true);
   });
 });
