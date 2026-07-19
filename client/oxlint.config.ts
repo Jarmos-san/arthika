@@ -15,11 +15,11 @@ export default defineConfig({
   ],
   categories: {
     correctness: "error",
-    // nursery: "error",
-    // pedantic: "warn",
+    nursery: "error",
+    pedantic: "warn",
     perf: "error",
-    // restriction: "error",
-    // style: "warn",
+    restriction: "error",
+    style: "warn",
     suspicious: "error",
   },
   env: {
