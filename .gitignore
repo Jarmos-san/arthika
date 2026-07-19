@@ -113,5 +113,6 @@ tags
 *.wasm
 *.wat
 *.xhtml
+coverage
 
 # End of https://www.toptal.com/developers/gitignore/api/web,go,vim,visualstudiocode,database

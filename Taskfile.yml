@@ -154,6 +154,14 @@ tasks:
       - sh: which pnpm
         msg: "pnpm not found. Install from https://pnpm.io/installation"
 
+  client:test:
+    desc: Run client tests
+    dir: client
+    cmd: pnpm test
+    preconditions:
+      - sh: which pnpm
+        msg: "pnpm not found. Install from https://pnpm.io/installation"
+
   client:build:
     desc: Build the client for production
     dir: client
