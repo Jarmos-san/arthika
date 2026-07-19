@@ -55,11 +55,13 @@
     );
   };
 
-  /** @description Form submit handler. Runs client-side validation before proceeding. */
+  /** @description Form submit handler. Validates inputs then navigates to `/dashboard`. */
   const onSubmit = async (): Promise<void> => {
     if (!validate()) {
       return;
     }
+
+    await navigateTo("/dashboard");
   };
 </script>
 
