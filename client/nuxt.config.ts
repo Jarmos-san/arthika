@@ -13,7 +13,7 @@ export default defineNuxtConfig({
   future: {
     compatibilityVersion: 4,
   },
-  modules: ["reka-ui/nuxt"],
+  modules: ["@pinia/nuxt", "reka-ui/nuxt"],
   ssr: true,
   typescript: {
     strict: true,
