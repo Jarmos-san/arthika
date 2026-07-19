@@ -7,7 +7,7 @@ export default defineNuxtConfig({
     compatibilityVersion: 4,
   },
   modules: ["reka-ui/nuxt"],
-  ssr: false,
+  ssr: true,
   typescript: {
     strict: true,
   },
