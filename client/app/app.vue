@@ -1,7 +1,7 @@
 <script setup lang="ts">
+  const auth = useAuthStore();
   const token = useCookie("token");
   if (token.value) {
-    const user = useState<User | null>("auth-user", () => null);
     try {
       const segment = token.value.split(".")[1];
       if (segment) {
@@ -10,7 +10,7 @@
           typeof payload.sub === "string" &&
           typeof payload.email === "string"
         ) {
-          user.value = { email: payload.email, id: payload.sub };
+          auth.isAuthenticated = true;
         } else {
           token.value = null;
         }
