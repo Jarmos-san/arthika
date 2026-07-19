@@ -55,10 +55,19 @@
     );
   };
 
-  /** @description Form submit handler. Validates inputs then navigates to `/dashboard`. */
+  /**
+   * @description Form submit handler. Validates inputs, authenticates, then navigates to
+   * `/dashboard`.
+   */
   const onSubmit = async (): Promise<void> => {
     if (!validate()) {
       return;
+    }
+
+    const { login } = useAuthStore();
+
+    if (email.value !== undefined && password.value !== undefined) {
+      login(email.value, password.value);
     }
 
     await navigateTo("/dashboard");
