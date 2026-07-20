@@ -35,6 +35,13 @@ export default defineConfig({
       files: ["*.config.ts"],
       rules: { "import/no-default-export": "allow" },
     },
+    {
+      files: ["tests/**/*.test.ts"],
+      rules: {
+        "vitest/no-importing-vitest-globals": "allow",
+        "vitest/prefer-strict-boolean-matchers": "allow",
+      },
+    },
   ],
   plugins: [
     "typescript",
