@@ -13,6 +13,7 @@ export default defineConfig({
   env: {
     amd: true,
     builtin: true,
+    node: true,
     "shared-node-browser": true,
     vitest: true,
     vue: true,
@@ -33,7 +34,16 @@ export default defineConfig({
     },
     {
       files: ["*.config.ts"],
-      rules: { "import/no-default-export": "allow" },
+      rules: {
+        "import/no-default-export": "allow",
+        "no-ternary": "allow",
+        "no-undefined": "allow",
+        "node/no-process-env": [
+          "error",
+          { allowedVariables: ["CI", "GITHUB_ACTIONS"] },
+        ],
+        "typescript/strict-boolean-expressions": "allow",
+      },
     },
     {
       files: ["tests/**/*.test.ts"],
@@ -55,6 +65,9 @@ export default defineConfig({
     "node",
     "vue",
   ],
+  rules: {
+    "eslint/sort-imports": "off",
+  },
   settings: {
     vitest: {
       typecheck: true,
