@@ -63,6 +63,14 @@ export default defineConfig({
         "typescript/prefer-readonly-parameter-types": "allow",
       },
     },
+    {
+      files: ["generated/**/*.ts"],
+      rules: {
+        "import/group-exports": "allow",
+        "import/no-named-export": "allow",
+        "unicorn/filename-case": ["error", { case: "pascalCase" }],
+      },
+    },
   ],
   plugins: [
     "typescript",
