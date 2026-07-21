@@ -18,6 +18,10 @@ export default defineConfig({
     vitest: true,
     vue: true,
   },
+  globals: {
+    defineNuxtRouteMiddleware: "readonly",
+    navigateTo: "readonly",
+  },
   options: {
     maxWarnings: 10,
     reportUnusedDisableDirectives: "error",
@@ -52,6 +56,13 @@ export default defineConfig({
         "vitest/prefer-strict-boolean-matchers": "allow",
       },
     },
+    {
+      files: ["app/middleware/**/*.ts"],
+      rules: {
+        "import/no-default-export": "allow",
+        "typescript/prefer-readonly-parameter-types": "allow",
+      },
+    },
   ],
   plugins: [
     "typescript",
@@ -67,6 +78,7 @@ export default defineConfig({
   ],
   rules: {
     "eslint/sort-imports": "off",
+    "oxc/no-async-await": "allow",
   },
   settings: {
     vitest: {
