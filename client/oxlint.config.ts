@@ -86,6 +86,7 @@ export default defineConfig({
   ],
   rules: {
     "eslint/sort-imports": "off",
+    "no-undefined": "allow",
     "oxc/no-async-await": "allow",
   },
   settings: {
