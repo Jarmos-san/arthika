@@ -3,71 +3,22 @@
   import { ref } from "vue";
 
   import useAuthStore from "~/stores/auth";
+  import { type LoginErrors, validateLogin } from "~/utils/validators";
 
   useHead({ title: "Login" });
 
   const email = ref<string | undefined>(undefined);
   const password = ref<string | undefined>(undefined);
 
-  /**
-   * @description Client-side validation errors for the login form. `undefined` means no
-   * error.
-   */
-  interface LoginErrors {
-    email: string | undefined;
-    password: string | undefined;
-    general: string | undefined;
-  }
-
-  /** @description Reactive container for current validation errors. Reset on each submit. */
   const errors = ref<LoginErrors>({
     email: undefined,
-    general: undefined,
     password: undefined,
   });
 
-  /**
-   * @description Validates email and password fields against the same rules the server
-   * enforces (valid email format, password minimum 8 characters). Resets errors
-   * before checking and returns `true` only when all fields pass.
-   *
-   * @returns {boolean} `true` if the form is valid, `false` otherwise.
-   */
-  const validate = (): boolean => {
-    errors.value = {
-      email: undefined,
-      general: undefined,
-      password: undefined,
-    };
-
-    const MIN_PASSWORD_LENGTH = 8;
-
-    // Email field validation
-    if (email.value === undefined) {
-      errors.value.email = "Email is required";
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/u.test(email.value)) {
-      errors.value.email = "Please enter a valid email address";
-    }
-
-    // Password field validation
-    if (password.value === undefined) {
-      errors.value.password = "Password is required";
-    } else if (password.value.length < MIN_PASSWORD_LENGTH) {
-      errors.value.password = "Password must be at least 8 characters";
-    }
-
-    // Return true/false based on validation logic above
-    return (
-      errors.value.email === undefined && errors.value.password === undefined
-    );
-  };
-
-  /**
-   * @description Form submit handler. Validates inputs, authenticates, then navigates to
-   * `/dashboard`.
-   */
   const onSubmit = async (): Promise<void> => {
-    if (!validate()) {
+    errors.value = validateLogin(email.value, password.value);
+
+    if (errors.value.email || errors.value.password) {
       return;
     }
 
@@ -93,12 +44,6 @@
         Enter your credentials to continue.
       </p>
       <div class="my-6 h-px bg-stone-200" />
-      <div
-        v-if="errors.general"
-        class="mb-5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
-      >
-        {{ errors.general }}
-      </div>
 
       <form class="flex flex-col gap-5" @submit.prevent="onSubmit">
         <div>

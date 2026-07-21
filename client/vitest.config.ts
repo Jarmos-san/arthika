@@ -44,7 +44,7 @@ export default defineConfig({
       {
         test: {
           environment: "node",
-          include: ["tests/unittests/**/*.test.ts"],
+          include: ["tests/unittests/**/*.test.ts", "tests/store/**/*.test.ts"],
           mockReset: true,
           name: "unit",
         },
