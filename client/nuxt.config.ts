@@ -1,14 +1,15 @@
 import tailwindcss from "@tailwindcss/vite";
+import { defineNuxtConfig } from "nuxt/config";
 
 export default defineNuxtConfig({
-  compatibilityDate: "2026-06-23",
   app: {
     head: {
-      titleTemplate: "%s | Arthika",
+      meta: [{ content: "Personal finance management", name: "description" }],
       title: "Arthika",
-      meta: [{ name: "description", content: "Personal finance management" }],
+      titleTemplate: "%s | Arthika",
     },
   },
+  compatibilityDate: "2026-06-23",
   css: ["./app/assets/css/main.css"],
   future: {
     compatibilityVersion: 4,

@@ -1,4 +1,9 @@
 <script setup lang="ts">
+  import { useHead } from "nuxt/app";
+  import { ref } from "vue";
+
+  import useAuthStore from "~/stores/auth";
+
   useHead({ title: "Login" });
 
   const email = ref<string | undefined>(undefined);
@@ -17,8 +22,8 @@
   /** @description Reactive container for current validation errors. Reset on each submit. */
   const errors = ref<LoginErrors>({
     email: undefined,
-    password: undefined,
     general: undefined,
+    password: undefined,
   });
 
   /**
@@ -26,26 +31,28 @@
    * enforces (valid email format, password minimum 8 characters). Resets errors
    * before checking and returns `true` only when all fields pass.
    *
-   * @returns `true` if the form is valid, `false` otherwise.
+   * @returns {boolean} `true` if the form is valid, `false` otherwise.
    */
   const validate = (): boolean => {
     errors.value = {
       email: undefined,
-      password: undefined,
       general: undefined,
+      password: undefined,
     };
+
+    const MIN_PASSWORD_LENGTH = 8;
 
     // Email field validation
     if (email.value === undefined) {
       errors.value.email = "Email is required";
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value)) {
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/u.test(email.value)) {
       errors.value.email = "Please enter a valid email address";
     }
 
     // Password field validation
     if (password.value === undefined) {
       errors.value.password = "Password is required";
-    } else if (password.value.length < 8) {
+    } else if (password.value.length < MIN_PASSWORD_LENGTH) {
       errors.value.password = "Password must be at least 8 characters";
     }
 

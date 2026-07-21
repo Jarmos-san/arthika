@@ -6,10 +6,10 @@ export default defineConfig({
     path: "../server/api/openapi.yml",
   },
   output: {
-    path: "./generated",
     clean: true,
     format: "oxfmt",
     lint: "oxlint",
+    path: "./generated",
   },
   plugins: [
     pluginTs({

@@ -1,7 +1,11 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+vi.setConfig({ testTimeout: 10_000 });
 
 describe("placeholder", () => {
   it("passes", () => {
-    expect(true).toBe(true);
+    expect.hasAssertions();
+
+    expect(true).toBeTruthy();
   });
 });

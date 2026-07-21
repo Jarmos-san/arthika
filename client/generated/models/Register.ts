@@ -18,16 +18,16 @@ export type RegisterStatus422 = ValidationErrors;
 export type RegisterData = RegisterRequest;
 
 /** @type object */
-export type RegisterRequestConfig = {
+export interface RegisterRequestConfig {
   body: RegisterData;
   path?: never;
   query?: never;
   headers?: never;
-};
+}
 
 /** @type object */
-export type RegisterResponses = {
+export interface RegisterResponses {
   "201": RegisterStatus201;
   "409": RegisterStatus409;
   "422": RegisterStatus422;
-};
+}

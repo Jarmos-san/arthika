@@ -1,9 +1,13 @@
 <script setup lang="ts">
+  import { useCookie } from "nuxt/app";
+
+  import useAuthStore from "~/stores/auth";
+
   const auth = useAuthStore();
   const token = useCookie("token");
   if (token.value) {
     try {
-      const segment = token.value.split(".")[1];
+      const [segment] = token.value.split(".");
       if (segment) {
         const payload = JSON.parse(atob(segment));
         if (
@@ -12,13 +16,13 @@
         ) {
           auth.isAuthenticated = true;
         } else {
-          token.value = null;
+          token.value = undefined;
         }
       } else {
-        token.value = null;
+        token.value = undefined;
       }
     } catch {
-      token.value = null;
+      token.value = undefined;
     }
   }
 </script>

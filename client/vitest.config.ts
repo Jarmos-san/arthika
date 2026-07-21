@@ -5,6 +5,7 @@ import {
   defineConfig,
 } from "vitest/config";
 
+const MIN_BAIL = 0;
 const MAX_FAILURES = 3;
 const MAX_RETRIES_IN_CI = 3;
 const MAX_RETRIES_IN_LOCAL = 0;
@@ -12,7 +13,7 @@ const MAX_WORKERS = 4;
 
 export default defineConfig({
   test: {
-    bail: process.env.CI ? MAX_FAILURES : undefined,
+    bail: process.env.CI ? MAX_FAILURES : MIN_BAIL,
     coverage: {
       enabled: true,
       exclude: [

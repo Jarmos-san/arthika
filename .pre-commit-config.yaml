@@ -17,19 +17,25 @@ repos:
       - id: crisp
         name: lint commit messages
 
-  - repo: https://github.com/oxc-project/mirrors-oxlint
-    rev: v1.74.0
+  - repo: local
     hooks:
       - id: oxlint
-        args:
-          - --config=client/oxlint.config.ts
-          - --disable-nested-config
-        additional_dependencies: [oxlint-tsgolint]
+        name: lint client-side code
+        entry: sh -c 'cd client && pnpm run lint'
+        language: system
+        types:
+          - ts
+          - javascript
+          - vue
+          - css
+          - yaml
+          - markdown
 
   - repo: https://github.com/oxc-project/mirrors-oxfmt
     rev: v0.57.0
     hooks:
       - id: oxfmt
+        name: format client-side code
         args:
           - --check
           - --config=client/oxfmt.config.ts

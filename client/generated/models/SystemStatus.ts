@@ -6,14 +6,14 @@ import type { SystemStatusResponse } from "./SystemStatusResponse.ts";
 export type SystemStatusStatus200 = SystemStatusResponse;
 
 /** @type object */
-export type SystemStatusRequestConfig = {
+export interface SystemStatusRequestConfig {
   body?: never;
   path?: never;
   query?: never;
   headers?: never;
-};
+}
 
 /** @type object */
-export type SystemStatusResponses = {
+export interface SystemStatusResponses {
   "200": SystemStatusStatus200;
-};
+}
