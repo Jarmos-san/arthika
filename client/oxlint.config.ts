@@ -71,6 +71,17 @@ export default defineConfig({
         "unicorn/filename-case": ["error", { case: "pascalCase" }],
       },
     },
+    {
+      files: ["app/**/*.vue"],
+      rules: {
+        "vitest/require-hook": "off",
+        "vue/define-props-destructuring": "allow",
+      },
+    },
+    {
+      files: ["app/components/**/*.vue"],
+      rules: { "unicorn/filename-case": ["error", { case: "pascalCase" }] },
+    },
   ],
   plugins: [
     "typescript",
@@ -86,6 +97,7 @@ export default defineConfig({
   ],
   rules: {
     "eslint/sort-imports": "off",
+    "no-default-export": "allow",
     "no-undefined": "allow",
     "oxc/no-async-await": "allow",
   },

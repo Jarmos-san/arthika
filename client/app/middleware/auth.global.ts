@@ -1,4 +1,4 @@
-import { useAuthStore } from "~/stores/auth";
+import useAuthStore from "~/stores/auth";
 
 /**
  * @description Global route guard that enforces authentication. Unauthenticated users are
