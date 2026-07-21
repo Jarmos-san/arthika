@@ -3,7 +3,7 @@ import { defineConfig } from "kubb";
 
 export default defineConfig({
   input: {
-    path: "../server/api/openapi.yml",
+    path: "../openapi.yml",
   },
   output: {
     clean: true,
