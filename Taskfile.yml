@@ -90,10 +90,10 @@ tasks:
     internal: true
     desc: Generate Go server stubs from the OpenAPI spec.
     dir: server
-    cmd: oapi-codegen -config oapi-codegen.yml api/openapi.yml
+    cmd: oapi-codegen -config oapi-codegen.yml ../openapi.yml
     vars:
       OAPI_CONFIG_FILE: oapi-codegen.yml
-      OAPI_SPEC_FILE: api/openapi.yml
+      OAPI_SPEC_FILE: ../openapi.yml
       OAPI_GEN_CODE: internal/api/server.gen.go
     sources:
       - "{{ .OAPI_CONFIG_FILE }}"
@@ -111,7 +111,7 @@ tasks:
     desc: Generate TypeScript client stubs (type definitions) from the OpenAPI spec.
     dir: client
     cmd: pnpm run openapi:generate
-    sources: ["{{ .OAPI_SPEC_FILE }}"]
+    sources: ["../openapi.yml"]
     generates: ["generated/**/*.ts"]
     preconditions:
       - sh: which pnpm

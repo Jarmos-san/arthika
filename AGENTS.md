@@ -25,7 +25,7 @@ go test ./server/internal/handler/ -run TestRegister_Success
 - Layers: **Handler → Repository** (no service package — deliberate MVP choice)
 - Server packages under `server/internal/`: `api/`, `app/`, `auth/`, `config/`, `handler/`, `logger/`, `middleware/`, `repository/`
 - Client app layout: `client/app/` with `pages/`, `composables/`, `assets/`
-- API spec: `server/api/openapi.yml` — JSON:API format (`application/vnd.api+json`)
+- API spec: `openapi.yml` (project root) — JSON:API format (`application/vnd.api+json`)
 - Routing: `go-chi/chi/v5` with strict server interface (`oapi-codegen`)
 - Logging: `slog` JSON handler to stdout
 - Database: SQLite via `golang-migrate` (auto-applied at startup)
@@ -38,7 +38,7 @@ Three generators, run in this order when the OpenAPI spec changes:
 
 ```bash
 cd server && sqlc generate                            # db/query/*.sql → internal/repository/
-cd server && oapi-codegen -config oapi-codegen.yml api/openapi.yml  # → internal/api/server.gen.go
+cd server && oapi-codegen -config oapi-codegen.yml ../openapi.yml  # → internal/api/server.gen.go
 cd client && pnpm run openapi:generate                # kubb → client/generated/
 ```
 
@@ -46,7 +46,7 @@ Shortcut: `task oapi:gen` runs all three in order.
 
 **`task server:generate` is broken** — it references a non-existent `oapi-codegen` subtask. Use `task oapi:gen` instead.
 
-Run codegen after changing `db/query/*.sql` (sqlc) or `server/api/openapi.yml` (oapi-codegen + kubb), then commit generated files.
+Run codegen after changing `db/query/*.sql` (sqlc) or `openapi.yml` (oapi-codegen + kubb), then commit generated files.
 
 ## Client
 
