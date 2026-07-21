@@ -52,6 +52,7 @@ export default defineConfig({
     {
       files: ["tests/**/*.test.ts"],
       rules: {
+        "import/no-relative-parent-imports": "allow",
         "vitest/no-importing-vitest-globals": "allow",
         "vitest/prefer-strict-boolean-matchers": "allow",
       },
@@ -74,6 +75,7 @@ export default defineConfig({
     {
       files: ["app/**/*.vue"],
       rules: {
+        "import/consistent-type-specifier-style": "allow",
         "vitest/require-hook": "off",
         "vue/define-props-destructuring": "allow",
       },
@@ -81,6 +83,10 @@ export default defineConfig({
     {
       files: ["app/components/**/*.vue"],
       rules: { "unicorn/filename-case": ["error", { case: "pascalCase" }] },
+    },
+    {
+      files: ["app/**/*.ts"],
+      rules: { "import/no-named-export": "allow" },
     },
   ],
   plugins: [
