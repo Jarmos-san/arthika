@@ -31,7 +31,7 @@ export default defineConfig({
   },
   overrides: [
     {
-      files: ["generated/models/*.ts"],
+      files: ["app/openapi/models/*.ts"],
       rules: {
         "jsdoc/check-tag-names": "allow",
       },
@@ -65,10 +65,16 @@ export default defineConfig({
       },
     },
     {
-      files: ["generated/**/*.ts"],
+      files: ["app/openapi/**/*.ts"],
       rules: {
         "import/group-exports": "allow",
         "import/no-named-export": "allow",
+        "unicorn/filename-case": ["error", { case: "pascalCase" }],
+      },
+    },
+    {
+      files: ["app/types/components/**/*.ts"],
+      rules: {
         "unicorn/filename-case": ["error", { case: "pascalCase" }],
       },
     },

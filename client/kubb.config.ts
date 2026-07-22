@@ -9,7 +9,7 @@ export default defineConfig({
     clean: true,
     format: "oxfmt",
     lint: "oxlint",
-    path: "./generated",
+    path: "./app/openapi",
   },
   plugins: [
     pluginTs({
