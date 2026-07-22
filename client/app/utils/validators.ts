@@ -1,10 +1,4 @@
-/** @description Validation errors for the login form fields. */
-interface LoginErrors {
-  /** @description Error message for the email field, or `undefined` if valid. */
-  email: string | undefined;
-  /** @description Error message for the password field, or `undefined` if valid. */
-  password: string | undefined;
-}
+import type { LoginErrors } from "~/types/utils/validators";
 
 /** @description Minimum number of characters required for the password field. */
 const MIN_PASSWORD_LENGTH = 8;
@@ -41,4 +35,4 @@ const validateLogin = (
   return errors;
 };
 
-export { type LoginErrors, validateLogin };
+export default validateLogin;

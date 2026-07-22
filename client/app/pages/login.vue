@@ -3,7 +3,8 @@
   import { ref } from "vue";
 
   import useAuthStore from "~/stores/auth";
-  import { type LoginErrors, validateLogin } from "~/utils/validators";
+  import type { LoginErrors } from "~/types/utils/validators";
+  import validateLogin from "~/utils/validators";
 
   useHead({ title: "Login" });
 
