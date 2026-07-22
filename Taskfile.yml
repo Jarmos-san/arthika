@@ -112,7 +112,7 @@ tasks:
     dir: client
     cmd: pnpm run openapi:generate
     sources: ["../openapi.yml"]
-    generates: ["generated/**/*.ts"]
+    generates: ["app/openapi/**/*.ts"]
     preconditions:
       - sh: which pnpm
         msg: >-
@@ -122,7 +122,7 @@ tasks:
     desc: Run all server code generators
     cmds:
       - task: sqlc
-      - task: oapi-codegen
+      - task: oapi:server
 
   server:test:
     desc: Run all server tests
