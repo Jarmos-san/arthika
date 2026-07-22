@@ -7,10 +7,7 @@
   import { Label } from "reka-ui";
   import { useAttrs } from "vue";
 
-  interface Props {
-    /** @description Visible text displayed above the input. */
-    label: string;
-  }
+  import type Props from "~/types/components/Input";
 
   defineOptions({ inheritAttrs: false });
 

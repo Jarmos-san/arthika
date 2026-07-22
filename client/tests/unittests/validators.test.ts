@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { validateLogin } from "../../app/utils/validators";
+import validateLogin from "../../app/utils/validators";
 
 vi.setConfig({ testTimeout: 10_000 });
 
