@@ -10,7 +10,10 @@ import (
 	"testing"
 
 	"github.com/Jarmos-san/arthika/server/internal/api"
+	"github.com/Jarmos-san/arthika/server/internal/auth"
+	"github.com/Jarmos-san/arthika/server/internal/config"
 	"github.com/Jarmos-san/arthika/server/internal/handler"
+	"github.com/Jarmos-san/arthika/server/internal/middleware"
 	"github.com/Jarmos-san/arthika/server/internal/repository"
 	"github.com/google/uuid"
 )
@@ -28,8 +31,17 @@ const testPasswordHash = "$2a$04$vVBiX25rd3eL4C1Sp0TOy.mlm/jT9SnI7qERMHDlTEfp.mh
 // that need a well-formed request body.
 const validLoginBody = `{"email":"test@example.com","password":"supersecret"}`
 
-// TestLogin_Success verifies valid credentials return 200 with a signed JWT,
-// the user's UUID and the email address.
+// testCookieConfig returns a config suitable for cookie middleware tests.
+func testCookieConfig() config.Config {
+	return config.Config{ //nolint:exhaustruct // Only cookie-related fields are relevant for these tests.
+		TokenSecret:    testTokenKey,
+		CookieSecure:   false,
+		CookieSameSite: http.SameSiteLaxMode,
+	}
+}
+
+// TestLogin_Success verifies valid credentials return 200 with the user's
+// UUID and email. The JWT is delivered via a Set-Cookie header, not the body.
 func TestLogin_Success(t *testing.T) {
 	t.Parallel()
 
@@ -45,7 +57,7 @@ func TestLogin_Success(t *testing.T) {
 		countUsersFn: nil,
 	}
 
-	hdl := handler.NewHandler(slog.Default(), mock)
+	hdl := handler.NewHandler(slog.Default(), mock, testTokenKey)
 	req := api.LoginRequestObject{
 		Body: &api.LoginRequest{
 			Email:    testEmail,
@@ -63,17 +75,52 @@ func TestLogin_Success(t *testing.T) {
 		t.Fatalf("expected Login200JSONResponse, got %T", resp)
 	}
 
-	if loginResp.Token == "" {
-		t.Error("expected non-empty token")
-	}
-
 	expectedUUID := uuid.MustParse(testUserID)
-	if loginResp.Id != expectedUUID {
-		t.Errorf("expected ID %s, got %s", testUserID, loginResp.Id)
+	if loginResp.Body.Id != expectedUUID {
+		t.Errorf("expected ID %s, got %s", testUserID, loginResp.Body.Id)
 	}
 
-	if string(loginResp.Email) != testEmail {
-		t.Errorf("expected email %s, got %s", testEmail, loginResp.Email)
+	if string(loginResp.Body.Email) != testEmail {
+		t.Errorf("expected email %s, got %s", testEmail, loginResp.Body.Email)
+	}
+}
+
+// TestLogin_Success_TokenInHolder verifies that a successful login stores the
+// generated JWT in the auth.TokenHolder accessible via context.
+func TestLogin_Success_TokenInHolder(t *testing.T) {
+	t.Parallel()
+
+	mock := &mockQuerier{
+		createUserFn: nil,
+		findUserByEmailFn: func(_ context.Context, email string) (repository.User, error) {
+			return repository.User{
+				ID:           testUserID,
+				Email:        email,
+				PasswordHash: testPasswordHash,
+			}, nil
+		},
+		countUsersFn: nil,
+	}
+
+	hdl := handler.NewHandler(slog.Default(), mock, testTokenKey)
+
+	// Simulate the cookie middleware by injecting a TokenHolder into the context.
+	ctx, holder := auth.WithTokenHolder(t.Context())
+
+	req := api.LoginRequestObject{
+		Body: &api.LoginRequest{
+			Email:    testEmail,
+			Password: testPassword,
+		},
+	}
+
+	_, err := hdl.Login(ctx, req)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if holder.Token == "" {
+		t.Error("expected token to be stored in holder, got empty string")
 	}
 }
 
@@ -94,7 +141,7 @@ func TestLogin_WrongPassword(t *testing.T) {
 		countUsersFn: nil,
 	}
 
-	hdl := handler.NewHandler(slog.Default(), mock)
+	hdl := handler.NewHandler(slog.Default(), mock, testTokenKey)
 	req := api.LoginRequestObject{
 		Body: &api.LoginRequest{
 			Email:    testEmail,
@@ -133,7 +180,7 @@ func TestLogin_EmailNotFound(t *testing.T) {
 		countUsersFn: nil,
 	}
 
-	hdl := handler.NewHandler(slog.Default(), mock)
+	hdl := handler.NewHandler(slog.Default(), mock, testTokenKey)
 	req := api.LoginRequestObject{
 		Body: &api.LoginRequest{
 			Email:    "unknown@example.com",
@@ -169,7 +216,7 @@ func TestLogin_InvalidEmail(t *testing.T) {
 		countUsersFn:      nil,
 	}
 
-	hdl := handler.NewHandler(slog.Default(), mock)
+	hdl := handler.NewHandler(slog.Default(), mock, testTokenKey)
 	req := api.LoginRequestObject{
 		Body: &api.LoginRequest{
 			Email:    "not-an-email",
@@ -206,7 +253,7 @@ func TestLogin_NilBody(t *testing.T) {
 		countUsersFn:      nil,
 	}
 
-	hdl := handler.NewHandler(slog.Default(), mock)
+	hdl := handler.NewHandler(slog.Default(), mock, testTokenKey)
 	req := api.LoginRequestObject{
 		Body: nil,
 	}
@@ -236,7 +283,7 @@ func TestLogin_EmptyPassword(t *testing.T) {
 		countUsersFn:      nil,
 	}
 
-	hdl := handler.NewHandler(slog.Default(), mock)
+	hdl := handler.NewHandler(slog.Default(), mock, testTokenKey)
 	req := api.LoginRequestObject{
 		Body: &api.LoginRequest{
 			Email:    testEmail,
@@ -264,7 +311,7 @@ func TestLogin_EmptyPassword(t *testing.T) {
 }
 
 // TestLogin_HTTPEndpoint_Success verifies the full HTTP stack returns 200 for
-// valid credentials.
+// valid credentials and sets a Set-Cookie header.
 func TestLogin_HTTPEndpoint_Success(t *testing.T) {
 	t.Parallel()
 
@@ -280,8 +327,9 @@ func TestLogin_HTTPEndpoint_Success(t *testing.T) {
 		countUsersFn: nil,
 	}
 
-	hdl := handler.NewHandler(slog.Default(), mock)
-	strictHandler := api.NewStrictHandler(hdl, nil)
+	hdl := handler.NewHandler(slog.Default(), mock, testTokenKey)
+	cookieMW := middleware.NewCookieMiddleware(testCookieConfig())
+	strictHandler := api.NewStrictHandler(hdl, []api.StrictMiddlewareFunc{cookieMW})
 
 	req := httptest.NewRequestWithContext(
 		t.Context(),
@@ -297,10 +345,27 @@ func TestLogin_HTTPEndpoint_Success(t *testing.T) {
 	if rec.Code != http.StatusOK {
 		t.Errorf("expected status %d, got %d", http.StatusOK, rec.Code)
 	}
+
+	cookieHeader := rec.Header().Get("Set-Cookie")
+	if cookieHeader == "" {
+		t.Fatal("expected Set-Cookie header to be set")
+	}
+
+	if !strings.Contains(cookieHeader, "token=") {
+		t.Errorf("expected cookie to contain 'token=', got %q", cookieHeader)
+	}
+
+	if !strings.Contains(cookieHeader, "HttpOnly") {
+		t.Errorf("expected cookie to be HttpOnly, got %q", cookieHeader)
+	}
+
+	if !strings.Contains(cookieHeader, "Path=/") {
+		t.Errorf("expected cookie Path to be /, got %q", cookieHeader)
+	}
 }
 
 // TestLogin_HTTPEndpoint_BadCredentials verifies the full HTTP stack returns
-// 401 for invalid credentials.
+// 401 for invalid credentials and does not set a cookie.
 func TestLogin_HTTPEndpoint_BadCredentials(t *testing.T) {
 	t.Parallel()
 
@@ -316,8 +381,9 @@ func TestLogin_HTTPEndpoint_BadCredentials(t *testing.T) {
 		countUsersFn: nil,
 	}
 
-	hdl := handler.NewHandler(slog.Default(), mock)
-	strictHandler := api.NewStrictHandler(hdl, nil)
+	hdl := handler.NewHandler(slog.Default(), mock, testTokenKey)
+	cookieMW := middleware.NewCookieMiddleware(testCookieConfig())
+	strictHandler := api.NewStrictHandler(hdl, []api.StrictMiddlewareFunc{cookieMW})
 
 	body := `{"email":"test@example.com","password":"wrongpassword"}`
 	req := httptest.NewRequestWithContext(
@@ -334,6 +400,10 @@ func TestLogin_HTTPEndpoint_BadCredentials(t *testing.T) {
 	if rec.Code != http.StatusUnauthorized {
 		t.Errorf("expected status %d, got %d", http.StatusUnauthorized, rec.Code)
 	}
+
+	if cookieHeader := rec.Header().Get("Set-Cookie"); cookieHeader != "" {
+		t.Errorf("expected no Set-Cookie header on 401, got %q", cookieHeader)
+	}
 }
 
 // TestLogin_HTTPEndpoint_InvalidBody verifies the full HTTP stack returns 400
@@ -347,7 +417,7 @@ func TestLogin_HTTPEndpoint_InvalidBody(t *testing.T) {
 		countUsersFn:      nil,
 	}
 
-	hdl := handler.NewHandler(slog.Default(), mock)
+	hdl := handler.NewHandler(slog.Default(), mock, testTokenKey)
 	strictHandler := api.NewStrictHandler(hdl, nil)
 
 	req := httptest.NewRequestWithContext(

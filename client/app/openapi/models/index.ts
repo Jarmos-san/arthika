@@ -1,5 +1,12 @@
 export type { ErrorResponse } from "./ErrorResponse.ts";
 export type {
+  GetCurrentUserRequestConfig,
+  GetCurrentUserResponse,
+  GetCurrentUserResponses,
+  GetCurrentUserStatus200,
+  GetCurrentUserStatus401,
+} from "./GetCurrentUser.ts";
+export type {
   LoginData,
   LoginRequestConfig,
   LoginResponses,
@@ -31,5 +38,6 @@ export type {
   SystemStatusStatus200,
 } from "./SystemStatus.ts";
 export type { SystemStatusResponse } from "./SystemStatusResponse.ts";
+export type { UserResponse } from "./UserResponse.ts";
 export type { ValidationError } from "./ValidationError.ts";
 export type { ValidationErrors } from "./ValidationErrors.ts";

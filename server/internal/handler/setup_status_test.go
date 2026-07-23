@@ -24,7 +24,7 @@ func TestSystemStatus_NeedsSetup(t *testing.T) {
 		},
 	}
 
-	hdl := handler.NewHandler(slog.Default(), mock)
+	hdl := handler.NewHandler(slog.Default(), mock, testTokenKey)
 
 	resp, err := hdl.SystemStatus(t.Context(), api.SystemStatusRequestObject{})
 	if err != nil {
@@ -54,7 +54,7 @@ func TestSystemStatus_NoSetupNeeded(t *testing.T) {
 		},
 	}
 
-	hdl := handler.NewHandler(slog.Default(), mock)
+	hdl := handler.NewHandler(slog.Default(), mock, testTokenKey)
 
 	resp, err := hdl.SystemStatus(t.Context(), api.SystemStatusRequestObject{})
 	if err != nil {
@@ -84,7 +84,7 @@ func TestSystemStatus_HTTPEndpoint(t *testing.T) {
 		},
 	}
 
-	hdl := handler.NewHandler(slog.Default(), mock)
+	hdl := handler.NewHandler(slog.Default(), mock, testTokenKey)
 	strictHandler := api.NewStrictHandler(hdl, nil)
 
 	req := httptest.NewRequestWithContext(

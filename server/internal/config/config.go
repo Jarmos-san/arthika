@@ -7,7 +7,9 @@ package config
 
 import (
 	"fmt"
+	"net/http"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -54,6 +56,16 @@ type Config struct {
 	//
 	// Example: "db/migrations"
 	MigrationDirectory string
+
+	// CookieDomain is the domain attribute for session cookies.
+	// An empty value restricts the cookie to the exact host.
+	CookieDomain string
+
+	// CookieSecure indicates whether the session cookie requires HTTPS.
+	CookieSecure bool
+
+	// CookieSameSite controls the SameSite attribute for session cookies.
+	CookieSameSite http.SameSite
 }
 
 // getEnv() retrieves the value of the environment variable identified by key. If the
@@ -64,6 +76,38 @@ func getEnv(key string, fallback string) string {
 	}
 
 	return fallback
+}
+
+// getEnvBool() retrieves an environment variable and parses it as a boolean.
+//
+// Accepted truthy values: "true", "1", "yes". Everything else is treated as false.
+func getEnvBool(key string, fallback bool) bool {
+	val := getEnv(key, "")
+	switch strings.ToLower(val) {
+	case "true", "1", "yes":
+		return true
+	case "false", "0", "no":
+		return false
+	default:
+		return fallback
+	}
+}
+
+// getEnvSameSite() retrieves an environment variable and parses it as an
+// http.SameSite value.
+//
+// Supported values: "strict", "lax", "none". Defaults to http.SameSiteLaxMode.
+func getEnvSameSite(key string, fallback http.SameSite) http.SameSite {
+	switch strings.ToLower(getEnv(key, "")) {
+	case "strict":
+		return http.SameSiteStrictMode
+	case "lax":
+		return http.SameSiteLaxMode
+	case "none":
+		return http.SameSiteNoneMode
+	default:
+		return fallback
+	}
 }
 
 // getEnvDuration() retrieves an environment variable and attempts to parse it as a
@@ -107,6 +151,9 @@ func LoadConfig() Config {
 		TokenSecret:        "super-secret-token",
 		DatabaseURL:        "db/arthika.db",
 		MigrationDirectory: "db/migrations",
+		CookieDomain:       "",
+		CookieSecure:       false,
+		CookieSameSite:     http.SameSiteLaxMode,
 	}
 
 	addr := getEnv("ADDR", defaultCfg.Addr)
@@ -117,6 +164,9 @@ func LoadConfig() Config {
 	tokenSecret := getEnv("TOKEN_SECRET", defaultCfg.TokenSecret)
 	databaseURL := getEnv("DATABASE_URL", defaultCfg.DatabaseURL)
 	migrationDirectory := getEnv("MIGRATIONS_DIR", defaultCfg.MigrationDirectory)
+	cookieDomain := getEnv("COOKIE_DOMAIN", defaultCfg.CookieDomain)
+	cookieSecure := getEnvBool("COOKIE_SECURE", defaultCfg.CookieSecure)
+	cookieSameSite := getEnvSameSite("COOKIE_SAMESITE", defaultCfg.CookieSameSite)
 
 	return Config{
 		Addr:               addr,
@@ -127,5 +177,8 @@ func LoadConfig() Config {
 		TokenSecret:        tokenSecret,
 		DatabaseURL:        databaseURL,
 		MigrationDirectory: migrationDirectory,
+		CookieDomain:       cookieDomain,
+		CookieSecure:       cookieSecure,
+		CookieSameSite:     cookieSameSite,
 	}
 }

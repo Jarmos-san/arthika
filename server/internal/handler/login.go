@@ -10,7 +10,6 @@ import (
 
 	"github.com/Jarmos-san/arthika/server/internal/api"
 	"github.com/Jarmos-san/arthika/server/internal/auth"
-	"github.com/Jarmos-san/arthika/server/internal/config"
 	"github.com/google/uuid"
 	"github.com/oapi-codegen/runtime/types"
 	"golang.org/x/crypto/bcrypt"
@@ -25,8 +24,11 @@ import (
 //  4. Compares the provided password against the stored bcrypt hash.
 //  5. Generates a signed JWT containing the user ID and email.
 //
+// The generated token is stored in an auth.TokenHolder in the context for the
+// cookie-setting strict middleware to consume.
+//
 // Returns:
-//   - Login200JSONResponse on success (200) with a signed JWT, user ID and email.
+//   - Login200JSONResponse on success (200) with user ID and email.
 //   - Login401JSONResponse if the email is unknown or the password is wrong (401).
 //     The same error message is used for both cases to avoid leaking which
 //     credential is incorrect.
@@ -50,7 +52,7 @@ func (h *Handler) Login(
 	email := strings.TrimSpace(string(req.Body.Email))
 	password := req.Body.Password
 
-	// Validate the user credentials and if there are any validation erros then return a
+	// Validate the user credentials and if there are any validation errors then return a
 	// 422 HTTP error message
 	if errs := validateLoginRequest(email, password); len(errs) > 0 {
 		return api.Login422JSONResponse{Errors: errs}, nil
@@ -79,15 +81,17 @@ func (h *Handler) Login(
 		}, nil
 	}
 
-	// Load the secret token (used to generate the JWT) from the configuration variables
-	tokenSecret := config.LoadConfig().TokenSecret
-
 	// Generate the JWT if the user-provided credentials are correct and valid
-	token, err := auth.GenerateToken(user.ID, user.Email, tokenSecret)
+	token, err := auth.GenerateToken(user.ID, user.Email, h.tokenSecret)
 	if err != nil {
 		h.logger.ErrorContext(ctx, "failed to generate JWT", "error", err)
 
 		return nil, fmt.Errorf("generate token: %w", err)
+	}
+
+	// Store the token in the context holder for the cookie middleware to consume
+	if holder := auth.TokenHolderFromContext(ctx); holder != nil {
+		holder.Token = token
 	}
 
 	// Check if the provided identifier associated with the user is correct (required to
@@ -99,11 +103,13 @@ func (h *Handler) Login(
 		return nil, fmt.Errorf("parse user ID: %w", err)
 	}
 
-	// Return a valid JSON response if the authentication was successful
-	return api.Login200JSONResponse{
-		Token: token,
-		Id:    userUUID,
-		Email: types.Email(email),
+	// Return a valid JSON response if the authentication was successful.
+	// Headers are optional; the Set-Cookie header is set by the cookie middleware.
+	return api.Login200JSONResponse{ //nolint:exhaustruct
+		Body: api.LoginResponse{
+			Id:    userUUID,
+			Email: types.Email(email),
+		},
 	}, nil
 }
 

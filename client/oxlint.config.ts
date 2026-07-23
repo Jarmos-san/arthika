@@ -19,6 +19,7 @@ export default defineConfig({
     vue: true,
   },
   globals: {
+    $fetch: "readonly",
     defineNuxtRouteMiddleware: "readonly",
     navigateTo: "readonly",
   },
@@ -52,6 +53,7 @@ export default defineConfig({
     {
       files: ["tests/**/*.test.ts"],
       rules: {
+        "eslint/max-lines-per-function": "allow",
         "import/no-relative-parent-imports": "allow",
         "vitest/no-importing-vitest-globals": "allow",
         "vitest/prefer-strict-boolean-matchers": "allow",

@@ -100,6 +100,33 @@ type claimsContext struct {
 	email  string
 }
 
+// tokenHolderKey is an unexported type used to store a TokenHolder in context.
+type tokenHolderKey struct{}
+
+// TokenHolder is a mutable container used to pass the generated JWT from a
+// handler to the cookie-setting strict middleware via context.
+type TokenHolder struct {
+	Token string
+}
+
+// WithTokenHolder creates a new TokenHolder, stores it in the context, and
+// returns both the updated context and a direct reference to the holder.
+func WithTokenHolder(ctx context.Context) (context.Context, *TokenHolder) {
+	holder := &TokenHolder{} //nolint:exhaustruct // Token is set by the login handler after generation.
+
+	return context.WithValue(ctx, tokenHolderKey{}, holder), holder
+}
+
+// TokenHolderFromContext retrieves the TokenHolder stored in the context.
+// Returns nil if no holder was stored (e.g. outside the cookie middleware).
+func TokenHolderFromContext(ctx context.Context) *TokenHolder {
+	if h, ok := ctx.Value(tokenHolderKey{}).(*TokenHolder); ok {
+		return h
+	}
+
+	return nil
+}
+
 // NewContext embeds the user ID and email into the provided context.
 func NewContext(ctx context.Context, userID, email string) context.Context {
 	return context.WithValue(

@@ -11,14 +11,16 @@ var _ api.StrictServerInterface = (*Handler)(nil)
 
 // Handler serves HTTP requests for the API.
 type Handler struct {
-	logger  *slog.Logger
-	querier repository.Querier
+	logger      *slog.Logger
+	querier     repository.Querier
+	tokenSecret string
 }
 
 // NewHandler creates a new Handler.
-func NewHandler(logger *slog.Logger, querier repository.Querier) *Handler {
+func NewHandler(logger *slog.Logger, querier repository.Querier, tokenSecret string) *Handler {
 	return &Handler{
-		logger:  logger,
-		querier: querier,
+		logger:      logger,
+		querier:     querier,
+		tokenSecret: tokenSecret,
 	}
 }

@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/Jarmos-san/arthika/server/internal/auth"
+	"github.com/Jarmos-san/arthika/server/internal/config"
 )
 
 // writeUnauthorized writes a standard 401 Unauthorised JSON response.
@@ -17,14 +18,31 @@ func writeUnauthorized(responseWriter http.ResponseWriter) {
 	_, _ = responseWriter.Write([]byte(`{"message":"unauthorized"}`))
 }
 
+// extractToken returns the JWT from either the Authorization header or the
+// session cookie. The Authorization header takes precedence.
+func extractToken(request *http.Request) string {
+	authHeader := request.Header.Get("Authorization")
+	if token, found := strings.CutPrefix(authHeader, "Bearer "); found {
+		return token
+	}
+
+	cookie, err := request.Cookie("token")
+	if err == nil && cookie.Value != "" {
+		return cookie.Value
+	}
+
+	return ""
+}
+
 // NewAuthMiddleware returns a Chi-compatible middleware that validates JWT
 // tokens on protected routes. Public routes are passed through without
 // authentication.
 //
-// The middleware expects a Bearer token in the Authorization header and
-// injects the authenticated user's ID and email into the request context
-// via auth.NewContext on success.
-func NewAuthMiddleware(secret string) func(http.Handler) http.Handler {
+// The middleware accepts a JWT from either the Authorization header (Bearer
+// scheme) or an HttpOnly session cookie named "token". The header takes
+// precedence when both are present. On success it injects the authenticated
+// user's ID and email into the request context via auth.NewContext.
+func NewAuthMiddleware(cfg config.Config) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(
 			func(responseWriter http.ResponseWriter, request *http.Request) {
@@ -40,21 +58,17 @@ func NewAuthMiddleware(secret string) func(http.Handler) http.Handler {
 					return
 				}
 
-				// Parse the HTTP "Authorization" header, and if it does not exist then
-				// write a 401 Unauthorised HTTP status code and a message
-				authHeader := request.Header.Get("Authorization")
-				if !strings.HasPrefix(authHeader, "Bearer ") {
+				// Extract the JWT from the Authorization header or session cookie
+				token := extractToken(request)
+				if token == "" {
 					writeUnauthorized(responseWriter)
 
 					return
 				}
 
-				// Parse the JWT from the "Authorization" token
-				token := strings.TrimPrefix(authHeader, "Bearer ")
-
 				// Check if the provided JWT is valid, if not, then write a 401
 				// Unauthorised HTTP status code and return a message
-				claims, err := auth.ValidateToken(token, secret)
+				claims, err := auth.ValidateToken(token, cfg.TokenSecret)
 				if err != nil {
 					writeUnauthorized(responseWriter)
 

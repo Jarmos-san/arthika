@@ -126,11 +126,10 @@ paths:
       tags: [Users]
       summary: Authenticate a user
       description: >-
-        Validates the user's email and password credentials and returns a signed
-        JWT on success. The token must be included in subsequent requests via
-        the Authorization header as "Bearer <token>". Returns 401 for both
-        unknown email and wrong password to avoid leaking which credential is
-        incorrect.
+        Validates the user's email and password credentials and sets an HttpOnly
+        session cookie containing a signed JWT on success. The cookie is used for
+        authentication on subsequent requests. Returns 401 for both unknown email
+        and wrong password to avoid leaking which credential is incorrect.
       operationId: login
       requestBody:
         required: true
@@ -141,6 +140,14 @@ paths:
       responses:
         "200":
           description: Authentication successful
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+              description: >-
+                HttpOnly session cookie containing the signed JWT. Attributes:
+                Path=/, HttpOnly, SameSite=Lax. MaxAge matches the token expiry
+                (24 hours).
           content:
             application/json:
               schema:
@@ -157,6 +164,28 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ValidationErrors"
+
+  /users/me:
+    get:
+      tags: [Users]
+      summary: Get current user profile
+      description: >-
+        Returns the authenticated user's ID and email. Requires a valid session
+        cookie or Bearer token in the Authorization header.
+      operationId: getCurrentUser
+      responses:
+        "200":
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserResponse"
+        "401":
+          description: Unauthorized — missing or invalid session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
 # ---------------------------------------------------------------------------
 # Reusable schemas (components)
@@ -220,11 +249,21 @@ components:
 
     LoginResponse:
       type: object
-      required: [token, id, email]
+      required: [id, email]
       properties:
-        token:
+        id:
           type: string
-          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+          format: uuid
+          example: 550e8400-e29b-41d4-a716-446655440000
+        email:
+          type: string
+          format: email
+          example: user@example.com
+
+    UserResponse:
+      type: object
+      required: [id, email]
+      properties:
         id:
           type: string
           format: uuid

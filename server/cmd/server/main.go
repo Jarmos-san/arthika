@@ -45,6 +45,8 @@ const shutdownTimeout = 5 * time.Second
 //
 // The server is gracefully shutdown when an interrupt or termination signal is
 // received, allowing in-flight requests to complete wihin a timeout period.
+//
+//nolint:funlen // Main is the application entry point; a moderate length is acceptable.
 func main() {
 	// Load application configuration from environment variables.
 	cfg := config.LoadConfig()
@@ -56,7 +58,7 @@ func main() {
 	router.Use(
 		chimw.Logger,
 		chimw.Recoverer,
-		middleware.NewAuthMiddleware(cfg.TokenSecret),
+		middleware.NewAuthMiddleware(cfg),
 	)
 
 	// Construct the app container (opens DB, runs migrations).
@@ -71,8 +73,10 @@ func main() {
 	}
 
 	queries := repository.New(app.DB)
-	h := handler.NewHandler(logger, queries)
-	strictHandler := api.NewStrictHandler(h, nil)
+	h := handler.NewHandler(logger, queries, cfg.TokenSecret)
+
+	cookieMW := middleware.NewCookieMiddleware(cfg)
+	strictHandler := api.NewStrictHandler(h, []api.StrictMiddlewareFunc{cookieMW})
 
 	docsHandler := handler.NewDocsHandler(logger)
 	router.Get("/docs", docsHandler.GetDocsPage)

@@ -21,6 +21,7 @@ import (
 const (
 	testEmail    = "test@example.com"
 	testPassword = "supersecret"
+	testTokenKey = "test-secret-key"
 )
 
 // mockQuerier implements repository.Querier with configurable function fields.
@@ -66,7 +67,7 @@ func TestRegister_Success(t *testing.T) {
 		countUsersFn: nil,
 	}
 
-	hdl := handler.NewHandler(slog.Default(), mock)
+	hdl := handler.NewHandler(slog.Default(), mock, testTokenKey)
 	req := api.RegisterRequestObject{
 		Body: &api.RegisterRequest{
 			Email:    testEmail,
@@ -105,7 +106,7 @@ func TestRegister_DuplicateEmail(t *testing.T) {
 		countUsersFn: nil,
 	}
 
-	hdl := handler.NewHandler(slog.Default(), mock)
+	hdl := handler.NewHandler(slog.Default(), mock, testTokenKey)
 	req := api.RegisterRequestObject{
 		Body: &api.RegisterRequest{
 			Email:    testEmail,
@@ -138,7 +139,7 @@ func TestRegister_InvalidEmail(t *testing.T) {
 		countUsersFn:      nil,
 	}
 
-	hdl := handler.NewHandler(slog.Default(), mock)
+	hdl := handler.NewHandler(slog.Default(), mock, testTokenKey)
 	req := api.RegisterRequestObject{
 		Body: &api.RegisterRequest{
 			Email:    "not-an-email",
@@ -175,7 +176,7 @@ func TestRegister_ShortPassword(t *testing.T) {
 		countUsersFn:      nil,
 	}
 
-	hdl := handler.NewHandler(slog.Default(), mock)
+	hdl := handler.NewHandler(slog.Default(), mock, testTokenKey)
 	req := api.RegisterRequestObject{
 		Body: &api.RegisterRequest{
 			Email:    testEmail,
@@ -212,7 +213,7 @@ func TestRegister_NilBody(t *testing.T) {
 		countUsersFn:      nil,
 	}
 
-	hdl := handler.NewHandler(slog.Default(), mock)
+	hdl := handler.NewHandler(slog.Default(), mock, testTokenKey)
 	req := api.RegisterRequestObject{
 		Body: nil,
 	}
@@ -247,7 +248,7 @@ func TestRegister_HTTPEndpoint_Success(t *testing.T) {
 		countUsersFn: nil,
 	}
 
-	hdl := handler.NewHandler(slog.Default(), mock)
+	hdl := handler.NewHandler(slog.Default(), mock, testTokenKey)
 	strictHandler := api.NewStrictHandler(hdl, nil)
 
 	req := httptest.NewRequestWithContext(
@@ -283,7 +284,7 @@ func TestRegister_HTTPEndpoint_DuplicateEmail(t *testing.T) {
 		countUsersFn: nil,
 	}
 
-	hdl := handler.NewHandler(slog.Default(), mock)
+	hdl := handler.NewHandler(slog.Default(), mock, testTokenKey)
 	strictHandler := api.NewStrictHandler(hdl, nil)
 
 	req := httptest.NewRequestWithContext(
@@ -313,7 +314,7 @@ func TestRegister_HTTPEndpoint_InvalidBody(t *testing.T) {
 		countUsersFn:      nil,
 	}
 
-	hdl := handler.NewHandler(slog.Default(), mock)
+	hdl := handler.NewHandler(slog.Default(), mock, testTokenKey)
 	strictHandler := api.NewStrictHandler(hdl, nil)
 
 	req := httptest.NewRequestWithContext(

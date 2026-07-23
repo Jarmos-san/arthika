@@ -6,6 +6,7 @@
 package config_test
 
 import (
+	"net/http"
 	"testing"
 	"time"
 
@@ -28,6 +29,9 @@ func TestLoadConfig_Defaults(t *testing.T) {
 		TokenSecret:        "super-secret-token",
 		DatabaseURL:        "db/arthika.db",
 		MigrationDirectory: "db/migrations",
+		CookieDomain:       "",
+		CookieSecure:       false,
+		CookieSameSite:     http.SameSiteLaxMode,
 	}
 
 	if cfg != defaultCfg {
