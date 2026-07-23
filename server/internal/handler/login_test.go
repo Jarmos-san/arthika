@@ -3,6 +3,7 @@ package handler_test
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
@@ -12,7 +13,6 @@ import (
 	"github.com/Jarmos-san/arthika/server/internal/api"
 	"github.com/Jarmos-san/arthika/server/internal/handler"
 	"github.com/Jarmos-san/arthika/server/internal/repository"
-	"github.com/google/uuid"
 )
 
 // testUserID is a well-known UUID used in login test expectations.
@@ -28,8 +28,28 @@ const testPasswordHash = "$2a$04$vVBiX25rd3eL4C1Sp0TOy.mlm/jT9SnI7qERMHDlTEfp.mh
 // that need a well-formed request body.
 const validLoginBody = `{"email":"test@example.com","password":"supersecret"}`
 
-// TestLogin_Success verifies valid credentials return 200 with a signed JWT,
-// the user's UUID and the email address.
+// assertLoginCookie verifies the Set-Cookie header contains the expected
+// auth_token cookie with the required security attributes.
+func assertLoginCookie(t *testing.T, setCookie string) {
+	t.Helper()
+
+	if setCookie == "" {
+		t.Fatal("expected Set-Cookie header to be set")
+	}
+
+	if !strings.HasPrefix(setCookie, "auth_token=") {
+		t.Errorf("expected cookie to start with auth_token=, got %s", setCookie)
+	}
+
+	for _, attr := range []string{"HttpOnly", "Path=/", "SameSite=Strict", "Max-Age=86400"} {
+		if !strings.Contains(setCookie, attr) {
+			t.Errorf("expected cookie to contain %s, got %s", attr, setCookie)
+		}
+	}
+}
+
+// TestLogin_Success verifies valid credentials return 200 with an HttpOnly
+// cookie containing the JWT, and a JSON body with only the user's ID and email.
 func TestLogin_Success(t *testing.T) {
 	t.Parallel()
 
@@ -58,22 +78,32 @@ func TestLogin_Success(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	loginResp, ok := resp.(api.Login200JSONResponse)
-	if !ok {
-		t.Fatalf("expected Login200JSONResponse, got %T", resp)
+	rec := httptest.NewRecorder()
+
+	err = resp.VisitLoginResponse(rec)
+	if err != nil {
+		t.Fatalf("VisitLoginResponse failed: %v", err)
 	}
 
-	if loginResp.Token == "" {
-		t.Error("expected non-empty token")
+	if rec.Code != http.StatusOK {
+		t.Errorf("expected status %d, got %d", http.StatusOK, rec.Code)
 	}
 
-	expectedUUID := uuid.MustParse(testUserID)
-	if loginResp.Id != expectedUUID {
-		t.Errorf("expected ID %s, got %s", testUserID, loginResp.Id)
+	assertLoginCookie(t, rec.Header().Get("Set-Cookie"))
+
+	var body api.LoginResponse
+
+	err = json.NewDecoder(rec.Body).Decode(&body)
+	if err != nil {
+		t.Fatalf("failed to decode response body: %v", err)
 	}
 
-	if string(loginResp.Email) != testEmail {
-		t.Errorf("expected email %s, got %s", testEmail, loginResp.Email)
+	if body.Id.String() != testUserID {
+		t.Errorf("expected ID %s, got %s", testUserID, body.Id)
+	}
+
+	if string(body.Email) != testEmail {
+		t.Errorf("expected email %s, got %s", testEmail, body.Email)
 	}
 }
 
@@ -263,8 +293,8 @@ func TestLogin_EmptyPassword(t *testing.T) {
 	}
 }
 
-// TestLogin_HTTPEndpoint_Success verifies the full HTTP stack returns 200 for
-// valid credentials.
+// TestLogin_HTTPEndpoint_Success verifies the full HTTP stack returns 200 with
+// a Set-Cookie header for valid credentials.
 func TestLogin_HTTPEndpoint_Success(t *testing.T) {
 	t.Parallel()
 
@@ -296,6 +326,15 @@ func TestLogin_HTTPEndpoint_Success(t *testing.T) {
 
 	if rec.Code != http.StatusOK {
 		t.Errorf("expected status %d, got %d", http.StatusOK, rec.Code)
+	}
+
+	setCookie := rec.Header().Get("Set-Cookie")
+	if setCookie == "" {
+		t.Fatal("expected Set-Cookie header to be set")
+	}
+
+	if !strings.HasPrefix(setCookie, "auth_token=") {
+		t.Errorf("expected cookie to start with auth_token=, got %s", setCookie)
 	}
 }
 

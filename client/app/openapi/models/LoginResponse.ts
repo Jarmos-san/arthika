@@ -3,12 +3,6 @@
 /** @type object */
 export interface LoginResponse {
   /**
-   * @example
-   *   eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-   * @type string
-   */
-  token: string;
-  /**
    * @description Format: `uuid`
    *
    * @example

@@ -127,10 +127,10 @@ paths:
       summary: Authenticate a user
       description: >-
         Validates the user's email and password credentials and returns a signed
-        JWT on success. The token must be included in subsequent requests via
-        the Authorization header as "Bearer <token>". Returns 401 for both
-        unknown email and wrong password to avoid leaking which credential is
-        incorrect.
+        JWT in an HttpOnly cookie named auth_token on success. The browser
+        includes this cookie automatically on subsequent requests. Returns 401
+        for both unknown email and wrong password to avoid leaking which
+        credential is incorrect.
       operationId: login
       requestBody:
         required: true
@@ -220,11 +220,8 @@ components:
 
     LoginResponse:
       type: object
-      required: [token, id, email]
+      required: [id, email]
       properties:
-        token:
-          type: string
-          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
         id:
           type: string
           format: uuid

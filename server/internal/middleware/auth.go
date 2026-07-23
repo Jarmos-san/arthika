@@ -4,7 +4,6 @@ package middleware
 import (
 	"net/http"
 	"slices"
-	"strings"
 
 	"github.com/Jarmos-san/arthika/server/internal/auth"
 )
@@ -18,12 +17,12 @@ func writeUnauthorized(responseWriter http.ResponseWriter) {
 }
 
 // NewAuthMiddleware returns a Chi-compatible middleware that validates JWT
-// tokens on protected routes. Public routes are passed through without
-// authentication.
+// tokens from an HttpOnly cookie on protected routes. Public routes are
+// passed through without authentication.
 //
-// The middleware expects a Bearer token in the Authorization header and
-// injects the authenticated user's ID and email into the request context
-// via auth.NewContext on success.
+// The middleware reads the auth_token cookie, validates the JWT, and injects
+// the authenticated user's ID and email into the request context via
+// auth.NewContext on success.
 func NewAuthMiddleware(secret string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(
@@ -40,29 +39,26 @@ func NewAuthMiddleware(secret string) func(http.Handler) http.Handler {
 					return
 				}
 
-				// Parse the HTTP "Authorization" header, and if it does not exist then
-				// write a 401 Unauthorised HTTP status code and a message
-				authHeader := request.Header.Get("Authorization")
-				if !strings.HasPrefix(authHeader, "Bearer ") {
+				// Read the JWT from the auth_token cookie. If the cookie is
+				// missing or empty, return 401 Unauthorised.
+				cookie, err := request.Cookie("auth_token")
+				if err != nil || cookie.Value == "" {
 					writeUnauthorized(responseWriter)
 
 					return
 				}
 
-				// Parse the JWT from the "Authorization" token
-				token := strings.TrimPrefix(authHeader, "Bearer ")
-
-				// Check if the provided JWT is valid, if not, then write a 401
-				// Unauthorised HTTP status code and return a message
-				claims, err := auth.ValidateToken(token, secret)
+				// Validate the JWT from the cookie. If the token is invalid
+				// (bad signature, expired, etc.), return 401 Unauthorised.
+				claims, err := auth.ValidateToken(cookie.Value, secret)
 				if err != nil {
 					writeUnauthorized(responseWriter)
 
 					return
 				}
 
-				// Continue serving the request with a context if the token verification
-				// was a success
+				// Continue serving the request with a context containing the
+				// authenticated user's claims.
 				ctx := auth.NewContext(request.Context(), claims.Subject, claims.Email)
 				next.ServeHTTP(responseWriter, request.WithContext(ctx))
 			},

@@ -54,6 +54,11 @@ type Config struct {
 	//
 	// Example: "db/migrations"
 	MigrationDirectory string
+
+	// CookieSecure determines whether the authentication cookie is marked as
+	// Secure, restricting it to HTTPS-only connections. Set to false for local
+	// development over plain HTTP.
+	CookieSecure bool
 }
 
 // getEnv() retrieves the value of the environment variable identified by key. If the
@@ -107,6 +112,7 @@ func LoadConfig() Config {
 		TokenSecret:        "super-secret-token",
 		DatabaseURL:        "db/arthika.db",
 		MigrationDirectory: "db/migrations",
+		CookieSecure:       true,
 	}
 
 	addr := getEnv("ADDR", defaultCfg.Addr)
@@ -117,6 +123,7 @@ func LoadConfig() Config {
 	tokenSecret := getEnv("TOKEN_SECRET", defaultCfg.TokenSecret)
 	databaseURL := getEnv("DATABASE_URL", defaultCfg.DatabaseURL)
 	migrationDirectory := getEnv("MIGRATIONS_DIR", defaultCfg.MigrationDirectory)
+	cookieSecure := getEnv("COOKIE_SECURE", "true") == "true"
 
 	return Config{
 		Addr:               addr,
@@ -127,5 +134,6 @@ func LoadConfig() Config {
 		TokenSecret:        tokenSecret,
 		DatabaseURL:        databaseURL,
 		MigrationDirectory: migrationDirectory,
+		CookieSecure:       cookieSecure,
 	}
 }

@@ -7,12 +7,17 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/Jarmos-san/arthika/server/internal/auth"
 	"github.com/Jarmos-san/arthika/server/internal/middleware"
+	jwt "github.com/golang-jwt/jwt/v5"
 )
 
-const testSecret = "test-secret-key"
+const (
+	testSecret     = "test-secret-key"
+	testCookieName = "auth_token"
+)
 
 // okHandler is a simple handler that returns 200 with a JSON body for testing.
 type okHandler struct{}
@@ -27,6 +32,26 @@ func (okHandler) ServeHTTP(responseWriter http.ResponseWriter, _ *http.Request) 
 // errorResponse is used to decode 401 JSON responses.
 type errorResponse struct {
 	Message string `json:"message"`
+}
+
+// testCookie creates an auth_token cookie for testing with the given value.
+func testCookie(value string) *http.Cookie {
+	return &http.Cookie{
+		Name:        testCookieName,
+		Value:       value,
+		Path:        "/",
+		HttpOnly:    true,
+		Secure:      true,
+		SameSite:    http.SameSiteStrictMode,
+		MaxAge:      0,
+		Quoted:      false,
+		Domain:      "",
+		Expires:     time.Time{},
+		RawExpires:  "",
+		Raw:         "",
+		Unparsed:    nil,
+		Partitioned: false,
+	}
 }
 
 // TestAuthMiddleware_PublicPaths verifies that public paths pass through
@@ -65,9 +90,9 @@ func TestAuthMiddleware_PublicPaths(t *testing.T) {
 	}
 }
 
-// TestAuthMiddleware_MissingToken verifies that a protected endpoint returns
-// 401 when no Authorization header is provided.
-func TestAuthMiddleware_MissingToken(t *testing.T) {
+// TestAuthMiddleware_MissingCookie verifies that a protected endpoint returns
+// 401 when no auth_token cookie is provided.
+func TestAuthMiddleware_MissingCookie(t *testing.T) {
 	t.Parallel()
 
 	authMiddleware := middleware.NewAuthMiddleware(testSecret)
@@ -99,8 +124,33 @@ func TestAuthMiddleware_MissingToken(t *testing.T) {
 	}
 }
 
+// TestAuthMiddleware_EmptyCookie verifies that a protected endpoint returns
+// 401 when the auth_token cookie is present but empty.
+func TestAuthMiddleware_EmptyCookie(t *testing.T) {
+	t.Parallel()
+
+	authMiddleware := middleware.NewAuthMiddleware(testSecret)
+	handler := authMiddleware(okHandler{})
+
+	req := httptest.NewRequestWithContext(
+		context.Background(),
+		http.MethodGet,
+		"/api/protected",
+		nil,
+	)
+	req.AddCookie(testCookie(""))
+
+	rec := httptest.NewRecorder()
+
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusUnauthorized {
+		t.Errorf("expected 401, got %d", rec.Code)
+	}
+}
+
 // TestAuthMiddleware_InvalidToken verifies that a protected endpoint returns
-// 401 when an invalid token is provided.
+// 401 when an invalid token is in the cookie.
 func TestAuthMiddleware_InvalidToken(t *testing.T) {
 	t.Parallel()
 
@@ -113,7 +163,7 @@ func TestAuthMiddleware_InvalidToken(t *testing.T) {
 		"/api/protected",
 		nil,
 	)
-	req.Header.Set("Authorization", "Bearer invalidtoken")
+	req.AddCookie(testCookie("invalidtoken"))
 
 	rec := httptest.NewRecorder()
 
@@ -124,33 +174,8 @@ func TestAuthMiddleware_InvalidToken(t *testing.T) {
 	}
 }
 
-// TestAuthMiddleware_InvalidScheme verifies that a non-Bearer Authorization
-// header returns 401.
-func TestAuthMiddleware_InvalidScheme(t *testing.T) {
-	t.Parallel()
-
-	authMiddleware := middleware.NewAuthMiddleware(testSecret)
-	handler := authMiddleware(okHandler{})
-
-	req := httptest.NewRequestWithContext(
-		context.Background(),
-		http.MethodGet,
-		"/api/protected",
-		nil,
-	)
-	req.Header.Set("Authorization", "Basic dXNlcjpwYXNz")
-
-	rec := httptest.NewRecorder()
-
-	handler.ServeHTTP(rec, req)
-
-	if rec.Code != http.StatusUnauthorized {
-		t.Errorf("expected 401, got %d", rec.Code)
-	}
-}
-
-// TestAuthMiddleware_ValidToken verifies that a valid token passes through
-// and the user context is populated.
+// TestAuthMiddleware_ValidToken verifies that a valid token in the cookie
+// passes through and the user context is populated.
 func TestAuthMiddleware_ValidToken(t *testing.T) {
 	t.Parallel()
 
@@ -184,7 +209,7 @@ func TestAuthMiddleware_ValidToken(t *testing.T) {
 		"/api/protected",
 		nil,
 	)
-	req.Header.Set("Authorization", "Bearer "+token)
+	req.AddCookie(testCookie(token))
 
 	rec := httptest.NewRecorder()
 
@@ -214,7 +239,52 @@ func TestAuthMiddleware_WrongSecret(t *testing.T) {
 		"/api/protected",
 		nil,
 	)
-	req.Header.Set("Authorization", "Bearer "+token)
+	req.AddCookie(testCookie(token))
+
+	rec := httptest.NewRecorder()
+
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusUnauthorized {
+		t.Errorf("expected 401, got %d", rec.Code)
+	}
+}
+
+// TestAuthMiddleware_ExpiredToken verifies that an expired token in the cookie
+// is rejected with 401.
+func TestAuthMiddleware_ExpiredToken(t *testing.T) {
+	t.Parallel()
+
+	claims := auth.Claims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			Issuer:    "Arthika API",
+			Subject:   "user-1",
+			Audience:  jwt.ClaimStrings{},
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(-1 * time.Hour)),
+			NotBefore: nil,
+			IssuedAt:  jwt.NewNumericDate(time.Now().Add(-2 * time.Hour)),
+			ID:        "expired-id",
+		},
+		Email: "user@example.com",
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+
+	signedToken, err := token.SignedString([]byte(testSecret))
+	if err != nil {
+		t.Fatalf("failed to sign expired token: %v", err)
+	}
+
+	authMiddleware := middleware.NewAuthMiddleware(testSecret)
+	handler := authMiddleware(okHandler{})
+
+	req := httptest.NewRequestWithContext(
+		context.Background(),
+		http.MethodGet,
+		"/api/protected",
+		nil,
+	)
+	req.AddCookie(testCookie(signedToken))
 
 	rec := httptest.NewRecorder()
 
