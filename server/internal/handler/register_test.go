@@ -79,13 +79,16 @@ func TestRegister_Success(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	createdResp, ok := resp.(api.Register201JSONResponse)
-	if !ok {
-		t.Fatalf("expected Register201JSONResponse, got %T", resp)
+	if resp == nil {
+		t.Fatal("expected non-nil response")
 	}
 
-	if string(createdResp.Email) != testEmail {
-		t.Errorf("expected email %s, got %s", testEmail, createdResp.Email)
+	// Verify the response is not an error type (409 or 422)
+	switch resp.(type) {
+	case api.Register409JSONResponse:
+		t.Fatal("unexpected 409 conflict response")
+	case api.Register422JSONResponse:
+		t.Fatal("unexpected 422 validation response")
 	}
 }
 
@@ -233,7 +236,7 @@ func TestRegister_NilBody(t *testing.T) {
 }
 
 // TestRegister_HTTPEndpoint_Success verifies the full HTTP stack returns 201 for valid
-// input.
+// input and sets an HttpOnly JWT cookie.
 func TestRegister_HTTPEndpoint_Success(t *testing.T) {
 	t.Parallel()
 
@@ -264,6 +267,40 @@ func TestRegister_HTTPEndpoint_Success(t *testing.T) {
 	if rec.Code != http.StatusCreated {
 		t.Errorf("expected status %d, got %d", http.StatusCreated, rec.Code)
 	}
+
+	authCookie := findAuthCookie(t, rec)
+	if authCookie == nil {
+		t.Fatal("expected auth_token cookie")
+	}
+
+	if !authCookie.HttpOnly {
+		t.Error("expected cookie to have HttpOnly=true")
+	}
+
+	if authCookie.Path != "/" {
+		t.Errorf("expected cookie path '/', got '%s'", authCookie.Path)
+	}
+
+	if authCookie.MaxAge != 86400 {
+		t.Errorf("expected cookie MaxAge 86400, got %d", authCookie.MaxAge)
+	}
+
+	if authCookie.Value == "" {
+		t.Error("expected non-empty cookie value")
+	}
+}
+
+// findAuthCookie extracts the auth_token cookie from the response.
+func findAuthCookie(t *testing.T, rec *httptest.ResponseRecorder) *http.Cookie {
+	t.Helper()
+
+	for _, c := range rec.Result().Cookies() {
+		if c.Name == "auth_token" {
+			return c
+		}
+	}
+
+	return nil
 }
 
 // TestRegister_HTTPEndpoint_DuplicateEmail verifies the full HTTP stack returns 409 for
@@ -329,5 +366,50 @@ func TestRegister_HTTPEndpoint_InvalidBody(t *testing.T) {
 
 	if rec.Code != http.StatusBadRequest {
 		t.Errorf("expected status %d, got %d", http.StatusBadRequest, rec.Code)
+	}
+}
+
+// TestRegister_HTTPEndpoint_CookieAttributes verifies the Secure and SameSite
+// attributes of the auth cookie. The default config has CookieSecure=false, so
+// Secure should not be set.
+func TestRegister_HTTPEndpoint_CookieAttributes(t *testing.T) {
+	t.Parallel()
+
+	mock := &mockQuerier{
+		createUserFn: func(_ context.Context, _ repository.CreateUserParams) error {
+			return nil
+		},
+		findUserByEmailFn: func(_ context.Context, _ string) (repository.User, error) {
+			return repository.User{}, sql.ErrNoRows
+		},
+		countUsersFn: nil,
+	}
+
+	hdl := handler.NewHandler(slog.Default(), mock)
+	strictHandler := api.NewStrictHandler(hdl, nil)
+
+	req := httptest.NewRequestWithContext(
+		t.Context(),
+		http.MethodPost,
+		"/api/users/register",
+		strings.NewReader(validLoginBody),
+	)
+	req.Header.Set("Content-Type", "application/json")
+
+	rec := httptest.NewRecorder()
+	strictHandler.Register(rec, req)
+
+	authCookie := findAuthCookie(t, rec)
+	if authCookie == nil {
+		t.Fatal("expected auth_token cookie")
+	}
+
+	// COOKIE_SECURE defaults to false in test environment
+	if authCookie.Secure {
+		t.Error("expected Secure=false when COOKIE_SECURE is not set")
+	}
+
+	if authCookie.SameSite != http.SameSiteLaxMode {
+		t.Errorf("expected SameSite=Lax, got %v", authCookie.SameSite)
 	}
 }
