@@ -75,8 +75,10 @@ paths:
       summary: Register a new user
       description: >-
         Creates a new user account with the given email and password. The
-        password is hashed before storage. Returns the newly created user's ID
-        and email on success.
+        password is hashed before storage. On success, the user is immediately
+        authenticated: a signed JWT is set as an HttpOnly cookie via the
+        Set-Cookie header. The response body contains the newly created user's
+        ID and email.
       operationId: register
       requestBody:
         required: true
@@ -86,7 +88,15 @@ paths:
               $ref: "#/components/schemas/RegisterRequest"
       responses:
         "201":
-          description: User created
+          description: User created and authenticated
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+              description: >-
+                HttpOnly cookie containing the signed JWT. Cookie attributes:
+                HttpOnly; Secure (configurable via COOKIE_SECURE env var);
+                SameSite=Lax; Path=/; Max-Age=86400.
           content:
             application/json:
               schema:
@@ -126,9 +136,9 @@ paths:
       tags: [Users]
       summary: Authenticate a user
       description: >-
-        Validates the user's email and password credentials and returns a signed
-        JWT on success. The token must be included in subsequent requests via
-        the Authorization header as "Bearer <token>". Returns 401 for both
+        Validates the user's email and password credentials. On success, a signed
+        JWT is set as an HttpOnly cookie via the Set-Cookie header. The response
+        body contains the authenticated user's ID and email. Returns 401 for both
         unknown email and wrong password to avoid leaking which credential is
         incorrect.
       operationId: login
@@ -141,6 +151,14 @@ paths:
       responses:
         "200":
           description: Authentication successful
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+              description: >-
+                HttpOnly cookie containing the signed JWT. Cookie attributes:
+                HttpOnly; Secure (configurable via COOKIE_SECURE env var);
+                SameSite=Lax; Path=/; Max-Age=86400.
           content:
             application/json:
               schema:
@@ -179,7 +197,9 @@ components:
 
     RegisterRequest:
       type: object
-      required: [email, password]
+      required:
+        - email
+        - password
       properties:
         email:
           type: string
@@ -193,7 +213,9 @@ components:
 
     RegisterResponse:
       type: object
-      required: [id, email]
+      required:
+        - id
+        - email
       properties:
         id:
           type: string
@@ -203,10 +225,13 @@ components:
           type: string
           format: email
           example: user@example.com
+      additionalProperties: false
 
     LoginRequest:
       type: object
-      required: [email, password]
+      required:
+        - email
+        - password
       properties:
         email:
           type: string
@@ -220,11 +245,10 @@ components:
 
     LoginResponse:
       type: object
-      required: [token, id, email]
+      required:
+        - id
+        - email
       properties:
-        token:
-          type: string
-          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
         id:
           type: string
           format: uuid
@@ -233,10 +257,13 @@ components:
           type: string
           format: email
           example: user@example.com
+      additionalProperties: false
 
     ValidationError:
       type: object
-      required: [field, message]
+      required:
+        - field
+        - message
       properties:
         field:
           type: string
@@ -247,7 +274,8 @@ components:
 
     ValidationErrors:
       type: object
-      required: [errors]
+      required:
+        - errors
       properties:
         errors:
           type: array
@@ -266,7 +294,8 @@ components:
 
     ErrorResponse:
       type: object
-      required: [message]
+      required:
+        - message
       properties:
         message:
           type: string
