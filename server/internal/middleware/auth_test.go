@@ -14,6 +14,9 @@ import (
 
 const testSecret = "test-secret-key"
 
+// testCookieName is the name of the auth cookie used in tests.
+const testCookieName = "auth_token"
+
 // okHandler is a simple handler that returns 200 with a JSON body for testing.
 type okHandler struct{}
 
@@ -29,8 +32,15 @@ type errorResponse struct {
 	Message string `json:"message"`
 }
 
+// testCookie creates an auth cookie for testing. Security attributes are
+// intentionally omitted since these are test fixtures.
+func testCookie(value string) *http.Cookie {
+	//nolint:gosec,exhaustruct // Test fixture, no security attributes needed.
+	return &http.Cookie{Name: testCookieName, Value: value}
+}
+
 // TestAuthMiddleware_PublicPaths verifies that public paths pass through
-// without requiring a token.
+// without requiring a cookie.
 func TestAuthMiddleware_PublicPaths(t *testing.T) {
 	t.Parallel()
 
@@ -65,9 +75,9 @@ func TestAuthMiddleware_PublicPaths(t *testing.T) {
 	}
 }
 
-// TestAuthMiddleware_MissingToken verifies that a protected endpoint returns
-// 401 when no Authorization header is provided.
-func TestAuthMiddleware_MissingToken(t *testing.T) {
+// TestAuthMiddleware_MissingCookie verifies that a protected endpoint returns
+// 401 when no auth_token cookie is provided.
+func TestAuthMiddleware_MissingCookie(t *testing.T) {
 	t.Parallel()
 
 	authMiddleware := middleware.NewAuthMiddleware(testSecret)
@@ -99,8 +109,33 @@ func TestAuthMiddleware_MissingToken(t *testing.T) {
 	}
 }
 
+// TestAuthMiddleware_EmptyCookieValue verifies that a protected endpoint returns
+// 401 when the auth_token cookie has an empty value.
+func TestAuthMiddleware_EmptyCookieValue(t *testing.T) {
+	t.Parallel()
+
+	authMiddleware := middleware.NewAuthMiddleware(testSecret)
+	handler := authMiddleware(okHandler{})
+
+	req := httptest.NewRequestWithContext(
+		context.Background(),
+		http.MethodGet,
+		"/api/protected",
+		nil,
+	)
+	req.AddCookie(testCookie(""))
+
+	rec := httptest.NewRecorder()
+
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusUnauthorized {
+		t.Errorf("expected 401, got %d", rec.Code)
+	}
+}
+
 // TestAuthMiddleware_InvalidToken verifies that a protected endpoint returns
-// 401 when an invalid token is provided.
+// 401 when an invalid token is provided via cookie.
 func TestAuthMiddleware_InvalidToken(t *testing.T) {
 	t.Parallel()
 
@@ -113,7 +148,7 @@ func TestAuthMiddleware_InvalidToken(t *testing.T) {
 		"/api/protected",
 		nil,
 	)
-	req.Header.Set("Authorization", "Bearer invalidtoken")
+	req.AddCookie(testCookie("invalidtoken"))
 
 	rec := httptest.NewRecorder()
 
@@ -124,33 +159,8 @@ func TestAuthMiddleware_InvalidToken(t *testing.T) {
 	}
 }
 
-// TestAuthMiddleware_InvalidScheme verifies that a non-Bearer Authorization
-// header returns 401.
-func TestAuthMiddleware_InvalidScheme(t *testing.T) {
-	t.Parallel()
-
-	authMiddleware := middleware.NewAuthMiddleware(testSecret)
-	handler := authMiddleware(okHandler{})
-
-	req := httptest.NewRequestWithContext(
-		context.Background(),
-		http.MethodGet,
-		"/api/protected",
-		nil,
-	)
-	req.Header.Set("Authorization", "Basic dXNlcjpwYXNz")
-
-	rec := httptest.NewRecorder()
-
-	handler.ServeHTTP(rec, req)
-
-	if rec.Code != http.StatusUnauthorized {
-		t.Errorf("expected 401, got %d", rec.Code)
-	}
-}
-
-// TestAuthMiddleware_ValidToken verifies that a valid token passes through
-// and the user context is populated.
+// TestAuthMiddleware_ValidToken verifies that a valid token in a cookie passes
+// through and the user context is populated.
 func TestAuthMiddleware_ValidToken(t *testing.T) {
 	t.Parallel()
 
@@ -184,7 +194,7 @@ func TestAuthMiddleware_ValidToken(t *testing.T) {
 		"/api/protected",
 		nil,
 	)
-	req.Header.Set("Authorization", "Bearer "+token)
+	req.AddCookie(testCookie(token))
 
 	rec := httptest.NewRecorder()
 
@@ -214,7 +224,7 @@ func TestAuthMiddleware_WrongSecret(t *testing.T) {
 		"/api/protected",
 		nil,
 	)
-	req.Header.Set("Authorization", "Bearer "+token)
+	req.AddCookie(testCookie(token))
 
 	rec := httptest.NewRecorder()
 
