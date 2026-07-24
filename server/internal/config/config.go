@@ -8,6 +8,7 @@ package config
 import (
 	"fmt"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -54,6 +55,11 @@ type Config struct {
 	//
 	// Example: "db/migrations"
 	MigrationDirectory string
+
+	// CookieSecure controls the Secure attribute on auth cookies. When true, the
+	// browser only sends the cookie over HTTPS. Set COOKIE_SECURE=true in
+	// production; defaults to false for local development over plain HTTP.
+	CookieSecure bool
 }
 
 // getEnv() retrieves the value of the environment variable identified by key. If the
@@ -94,6 +100,9 @@ func getEnvDuration(key string, fallback time.Duration) (time.Duration, error) {
 //   - WRITE_TIMEOUT: response write timeout (e.g., "10s")
 //   - IDLE_TIMEOUT: keep-alive idle timeout (e.g., "60s")
 //   - LOG_LEVEL: the log level (e.g., "debug", "info", "warn", "error")
+//   - TOKEN_SECRET: secret key used to sign JWTs
+//   - COOKIE_SECURE: set to "true" to enable the Secure attribute on auth
+//     cookies (default "false" for local development over plain HTTP)
 //
 // If an environment variable is not set or contains an invalid value, the corresponding
 // default value is used instead.
@@ -107,6 +116,7 @@ func LoadConfig() Config {
 		TokenSecret:        "super-secret-token",
 		DatabaseURL:        "db/arthika.db",
 		MigrationDirectory: "db/migrations",
+		CookieSecure:       false,
 	}
 
 	addr := getEnv("ADDR", defaultCfg.Addr)
@@ -117,6 +127,7 @@ func LoadConfig() Config {
 	tokenSecret := getEnv("TOKEN_SECRET", defaultCfg.TokenSecret)
 	databaseURL := getEnv("DATABASE_URL", defaultCfg.DatabaseURL)
 	migrationDirectory := getEnv("MIGRATIONS_DIR", defaultCfg.MigrationDirectory)
+	cookieSecure := strings.EqualFold(getEnv("COOKIE_SECURE", "false"), "true")
 
 	return Config{
 		Addr:               addr,
@@ -127,5 +138,6 @@ func LoadConfig() Config {
 		TokenSecret:        tokenSecret,
 		DatabaseURL:        databaseURL,
 		MigrationDirectory: migrationDirectory,
+		CookieSecure:       cookieSecure,
 	}
 }
