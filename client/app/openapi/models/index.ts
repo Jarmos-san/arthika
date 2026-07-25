@@ -10,6 +10,12 @@ export type {
 export type { LoginRequest } from "./LoginRequest.ts";
 export type { LoginResponse } from "./LoginResponse.ts";
 export type {
+  LogoutRequestConfig,
+  LogoutResponse,
+  LogoutResponses,
+  LogoutStatus204,
+} from "./Logout.ts";
+export type {
   PingRequestConfig,
   PingResponses,
   PingStatus200,

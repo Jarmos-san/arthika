@@ -23,7 +23,10 @@ var publicPaths = []string{
 	"/api/ping",
 	"/api/users/register",
 	"/api/users/login",
+	"/api/users/logout",
 	"/api/setup/status",
+	"/docs",
+	"/openapi.json",
 }
 
 // authHandler is an HTTP handler that validates JWT tokens from cookies.
