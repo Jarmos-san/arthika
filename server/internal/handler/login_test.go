@@ -12,7 +12,6 @@ import (
 	"github.com/Jarmos-san/arthika/server/internal/api"
 	"github.com/Jarmos-san/arthika/server/internal/handler"
 	"github.com/Jarmos-san/arthika/server/internal/repository"
-	"github.com/google/uuid"
 )
 
 // testUserID is a well-known UUID used in login test expectations.
@@ -28,8 +27,8 @@ const testPasswordHash = "$2a$04$vVBiX25rd3eL4C1Sp0TOy.mlm/jT9SnI7qERMHDlTEfp.mh
 // that need a well-formed request body.
 const validLoginBody = `{"email":"test@example.com","password":"supersecret"}`
 
-// TestLogin_Success verifies valid credentials return 200 with a signed JWT,
-// the user's UUID and the email address.
+// TestLogin_Success verifies valid credentials return 200 with the user's UUID
+// and email address.
 func TestLogin_Success(t *testing.T) {
 	t.Parallel()
 
@@ -58,22 +57,15 @@ func TestLogin_Success(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	loginResp, ok := resp.(api.Login200JSONResponse)
-	if !ok {
-		t.Fatalf("expected Login200JSONResponse, got %T", resp)
+	if resp == nil {
+		t.Fatal("expected non-nil response")
 	}
 
-	if loginResp.Token == "" {
-		t.Error("expected non-empty token")
-	}
-
-	expectedUUID := uuid.MustParse(testUserID)
-	if loginResp.Id != expectedUUID {
-		t.Errorf("expected ID %s, got %s", testUserID, loginResp.Id)
-	}
-
-	if string(loginResp.Email) != testEmail {
-		t.Errorf("expected email %s, got %s", testEmail, loginResp.Email)
+	switch resp.(type) {
+	case api.Login401JSONResponse:
+		t.Fatal("unexpected 401 unauthorized response")
+	case api.Login422JSONResponse:
+		t.Fatal("unexpected 422 validation response")
 	}
 }
 
@@ -264,7 +256,7 @@ func TestLogin_EmptyPassword(t *testing.T) {
 }
 
 // TestLogin_HTTPEndpoint_Success verifies the full HTTP stack returns 200 for
-// valid credentials.
+// valid credentials and sets an HttpOnly JWT cookie.
 func TestLogin_HTTPEndpoint_Success(t *testing.T) {
 	t.Parallel()
 
@@ -296,6 +288,27 @@ func TestLogin_HTTPEndpoint_Success(t *testing.T) {
 
 	if rec.Code != http.StatusOK {
 		t.Errorf("expected status %d, got %d", http.StatusOK, rec.Code)
+	}
+
+	authCookie := findAuthCookie(t, rec)
+	if authCookie == nil {
+		t.Fatal("expected auth_token cookie")
+	}
+
+	if !authCookie.HttpOnly {
+		t.Error("expected cookie to have HttpOnly=true")
+	}
+
+	if authCookie.Path != "/" {
+		t.Errorf("expected cookie path '/', got '%s'", authCookie.Path)
+	}
+
+	if authCookie.MaxAge != 86400 {
+		t.Errorf("expected cookie MaxAge 86400, got %d", authCookie.MaxAge)
+	}
+
+	if authCookie.Value == "" {
+		t.Error("expected non-empty cookie value")
 	}
 }
 

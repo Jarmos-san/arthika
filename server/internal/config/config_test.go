@@ -28,6 +28,7 @@ func TestLoadConfig_Defaults(t *testing.T) {
 		TokenSecret:        "super-secret-token",
 		DatabaseURL:        "db/arthika.db",
 		MigrationDirectory: "db/migrations",
+		CookieSecure:       false,
 	}
 
 	if cfg != defaultCfg {
