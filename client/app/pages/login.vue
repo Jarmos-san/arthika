@@ -93,7 +93,7 @@
         Don't have an account?
         <NuxtLink
           class="font-medium text-stone-600 hover:text-stone-800"
-          to="/setup"
+          to="/register"
         >
           Set up your account
         </NuxtLink>
