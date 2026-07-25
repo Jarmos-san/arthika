@@ -143,6 +143,28 @@ paths:
         "204":
           description: Logged out successfully
 
+  /users/current-user:
+    get:
+      tags: [Users]
+      summary: Get the current authenticated user
+      description: >-
+        Returns the currently authenticated user's ID and email. Requires a
+        valid auth_token HttpOnly cookie set during login or registration.
+      operationId: currentUser
+      responses:
+        "200":
+          description: Current user info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CurrentUserResponse"
+        "401":
+          description: Unauthorized — no valid session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /users/login:
     post:
       tags: [Users]
@@ -312,6 +334,22 @@ components:
         message:
           type: string
           example: email already registered
+
+    CurrentUserResponse:
+      type: object
+      required:
+        - id
+        - email
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 550e8400-e29b-41d4-a716-446655440000
+        email:
+          type: string
+          format: email
+          example: user@example.com
+      additionalProperties: false
 
 # ---------------------------------------------------------------------------
 # Tag definitions
