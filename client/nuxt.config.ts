@@ -15,6 +15,11 @@ export default defineNuxtConfig({
     compatibilityVersion: 4,
   },
   modules: ["@pinia/nuxt", "reka-ui/nuxt"],
+  runtimeConfig: {
+    public: {
+      apiBase: "http://localhost:8000",
+    },
+  },
   ssr: true,
   typescript: {
     strict: true,

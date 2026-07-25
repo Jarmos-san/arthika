@@ -19,8 +19,10 @@ export default defineConfig({
     vue: true,
   },
   globals: {
+    $fetch: "readonly",
     defineNuxtRouteMiddleware: "readonly",
     navigateTo: "readonly",
+    useRuntimeConfig: "readonly",
   },
   options: {
     maxWarnings: 10,
