@@ -131,6 +131,18 @@ paths:
               schema:
                 $ref: "#/components/schemas/SystemStatusResponse"
 
+  /users/logout:
+    post:
+      tags: [Users]
+      summary: Log out a user
+      description: >-
+        Clears the authentication cookie. The JWT remains valid until its
+        natural expiry but is no longer sent by the client.
+      operationId: logout
+      responses:
+        "204":
+          description: Logged out successfully
+
   /users/login:
     post:
       tags: [Users]
