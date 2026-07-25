@@ -1,3 +1,10 @@
+export type {
+  CurrentUserRequestConfig,
+  CurrentUserResponses,
+  CurrentUserStatus200,
+  CurrentUserStatus401,
+} from "./models/CurrentUser.ts";
+export type { CurrentUserResponse } from "./models/CurrentUserResponse.ts";
 export type { ErrorResponse } from "./models/ErrorResponse.ts";
 export type {
   LoginData,
