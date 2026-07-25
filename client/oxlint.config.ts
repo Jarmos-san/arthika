@@ -69,6 +69,7 @@ export default defineConfig({
       rules: {
         "import/group-exports": "allow",
         "import/no-named-export": "allow",
+        "typescript/no-explicit-any": "allow",
         "unicorn/filename-case": ["error", { case: "pascalCase" }],
       },
     },
