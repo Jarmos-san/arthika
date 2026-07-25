@@ -23,6 +23,7 @@ var publicPaths = []string{
 	"/api/ping",
 	"/api/users/register",
 	"/api/users/login",
+	"/api/users/logout",
 	"/api/setup/status",
 }
 
