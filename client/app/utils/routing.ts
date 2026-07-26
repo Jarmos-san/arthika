@@ -1,5 +1,5 @@
 /** @description Routes accessible without authentication. */
-const publicRoutes = new Set(["/login", "/setup"]);
+const publicRoutes = new Set(["/login", "/register"]);
 
 /**
  * @description Determines the redirect path based on authentication state and the target
