@@ -1,4 +1,4 @@
-import type { LoginErrors } from "~/types/utils/validators";
+import type { LoginErrors, RegisterErrors } from "~/types/utils/validators";
 
 /** @description Minimum number of characters required for the password field. */
 const MIN_PASSWORD_LENGTH = 8;
@@ -35,4 +35,38 @@ const validateLogin = (
   return errors;
 };
 
-export default validateLogin;
+/**
+ * @description Validates email, password, and confirm password fields. Reuses the same email
+ * and password rules as `validateLogin`, and additionally checks that the
+ * confirm password matches the password.
+ *
+ * @param {string | undefined} email - The email value to validate.
+ * @param {string | undefined} password - The password value to validate.
+ * @param {string | undefined} confirmPassword - The confirm password value to
+ *   validate.
+ *
+ * @returns {RegisterErrors} An object containing validation errors for each
+ *   field.
+ */
+const validateRegister = (
+  email: string | undefined,
+  password: string | undefined,
+  confirmPassword: string | undefined,
+): RegisterErrors => {
+  const loginErrors = validateLogin(email, password);
+  const errors: RegisterErrors = {
+    confirmPassword: undefined,
+    email: loginErrors.email,
+    password: loginErrors.password,
+  };
+
+  if (confirmPassword === undefined) {
+    errors.confirmPassword = "Please confirm your password";
+  } else if (confirmPassword !== password) {
+    errors.confirmPassword = "Passwords do not match";
+  }
+
+  return errors;
+};
+
+export { validateLogin, validateRegister };
