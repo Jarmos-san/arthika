@@ -95,7 +95,7 @@ export default defineConfig({
       files: ["app/composables/**/*.ts"],
       rules: {
         "import/no-named-export": "allow",
-        "unicorn/filename-case": ["error", { case: "pascalCase" }],
+        "unicorn/filename-case": ["error", { case: "camelCase" }],
       },
     },
     {
