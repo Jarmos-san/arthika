@@ -16,10 +16,11 @@ export default defineNuxtConfig({
   },
   modules: ["@pinia/nuxt", "reka-ui/nuxt"],
   nitro: {
-    devProxy: {
-      "/api": {
-        changeOrigin: true,
-        target: "http://localhost:8000",
+    routeRules: {
+      "/api/**": {
+        proxy: {
+          to: "http://localhost:8000/api/**",
+        },
       },
     },
   },
