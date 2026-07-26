@@ -92,6 +92,13 @@ export default defineConfig({
       rules: { "unicorn/filename-case": ["error", { case: "pascalCase" }] },
     },
     {
+      files: ["app/composables/**/*.ts"],
+      rules: {
+        "import/no-named-export": "allow",
+        "unicorn/filename-case": ["error", { case: "pascalCase" }],
+      },
+    },
+    {
       files: ["app/**/*.ts"],
       rules: { "import/no-named-export": "allow" },
     },
