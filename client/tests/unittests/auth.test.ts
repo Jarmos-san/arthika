@@ -25,13 +25,13 @@ describe("getRedirectPath", () => {
     expect(getRedirectPath(false, "/login")).toBeUndefined();
   });
 
-  it("returns undefined for unauthenticated user on /setup", () => {
+  it("returns undefined for unauthenticated user on /register", () => {
     expect.hasAssertions();
-    expect(getRedirectPath(false, "/setup")).toBeUndefined();
+    expect(getRedirectPath(false, "/register")).toBeUndefined();
   });
 
-  it("returns undefined for authenticated user on /setup", () => {
+  it("returns undefined for authenticated user on /register", () => {
     expect.hasAssertions();
-    expect(getRedirectPath(true, "/setup")).toBeUndefined();
+    expect(getRedirectPath(true, "/register")).toBeUndefined();
   });
 });
