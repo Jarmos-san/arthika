@@ -2,7 +2,7 @@
   import { useHead } from "nuxt/app";
   import { ref } from "vue";
 
-  import useToast from "~/composables/UseToast";
+  import useToast from "~/composables/useToast";
   import type { RegisterErrors } from "~/types/utils/validators";
   import { validateRegister } from "~/utils/validators";
 
