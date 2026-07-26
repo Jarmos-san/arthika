@@ -10,7 +10,7 @@ export default defineNuxtConfig({
     },
   },
   compatibilityDate: "2026-06-23",
-  css: ["./app/assets/css/main.css"],
+  css: ["./assets/css/main.css"],
   future: {
     compatibilityVersion: 4,
   },
