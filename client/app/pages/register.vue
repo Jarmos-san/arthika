@@ -1,8 +1,35 @@
 <script setup lang="ts">
+  import { useHead } from "nuxt/app";
   import { ref } from "vue";
 
-  const email = ref("");
-  const password = ref("");
+  import type { RegisterErrors } from "~/types/utils/validators";
+  import { validateRegister } from "~/utils/validators";
+
+  // Add a title for the page
+  useHead({
+    title: "Register",
+  });
+
+  // Set up the initial state for the form fields
+  const email = ref<string | undefined>(undefined);
+  const password = ref<string | undefined>(undefined);
+  const confirmPassword = ref<string | undefined>(undefined);
+
+  // Create the initial state of the credential errors
+  const errors = ref<RegisterErrors>({
+    confirmPassword: undefined,
+    email: undefined,
+    password: undefined,
+  });
+
+  // Event handlers for the form submission logic
+  const onSubmit = (): void => {
+    errors.value = validateRegister(
+      email.value,
+      password.value,
+      confirmPassword.value,
+    );
+  };
 </script>
 
 <template>
@@ -21,25 +48,77 @@
 
       <div class="my-6 h-px bg-stone-200" />
 
-      <form class="flex flex-col gap-5" @submit.prevent>
-        <Input
-          v-model="email"
-          id="email"
-          label="Email"
-          type="email"
-          placeholder="you@example.com"
-        />
+      <!-- The registration form -->
+      <form class="flex flex-col gap-5" @submit.prevent="onSubmit">
+        <!-- Email input field -->
+        <div>
+          <Input
+            id="email"
+            v-model="email"
+            aria-describedby="email-error"
+            label="Email"
+            placeholder="you@example.com"
+            type="email"
+          />
+          <p
+            v-if="errors.email"
+            id="email-error"
+            class="mt-1.5 text-xs text-red-600"
+          >
+            {{ errors.email }}
+          </p>
+        </div>
 
-        <Input
-          v-model="password"
-          id="password"
-          label="Password"
-          type="password"
-          placeholder="Minimum 8 characters"
-        />
+        <!-- Password input field -->
+        <div>
+          <Input
+            id="password"
+            v-model="password"
+            aria-describedby="password-error"
+            label="Password"
+            placeholder="Minimum 8 characters"
+            type="password"
+          />
+          <p
+            v-if="errors.password"
+            id="password-error"
+            class="mt-1.5 text-xs text-red-600"
+          >
+            {{ errors.password }}
+          </p>
+        </div>
 
-        <button type="submit" class="btn-primary mt-1"> Create Account </button>
+        <!-- Password confirmation field -->
+        <div>
+          <Input
+            id="confirm-password"
+            v-model="confirmPassword"
+            aria-describedby="confirm-password-error"
+            label="Confirm Password"
+            placeholder="Retype your password"
+            type="password"
+          />
+          <p
+            v-if="errors.confirmPassword"
+            id="confirm-password-error"
+            class="mt-1.5 text-xs text-red-600"
+          >
+            {{ errors.confirmPassword }}
+          </p>
+        </div>
+
+        <!-- Submission button -->
+        <button class="btn-primary mt-1" type="submit">Create Account</button>
       </form>
+      <p class="mt-6 text-center text-sm text-stone-400">
+        Have an account?
+        <NuxtLink
+          class="font-medium text-stone-600 hover:text-stone-800"
+          to="/login"
+        >
+          Login in instead
+        </NuxtLink>
+      </p>
     </div>
   </div>
 </template>
