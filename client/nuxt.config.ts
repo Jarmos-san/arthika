@@ -15,6 +15,14 @@ export default defineNuxtConfig({
     compatibilityVersion: 4,
   },
   modules: ["@pinia/nuxt", "reka-ui/nuxt"],
+  nitro: {
+    devProxy: {
+      "/api": {
+        changeOrigin: true,
+        target: "http://localhost:8000",
+      },
+    },
+  },
   ssr: true,
   typescript: {
     strict: true,
