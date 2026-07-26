@@ -1,7 +1,7 @@
 <script setup lang="ts">
   import { useCookie } from "nuxt/app";
 
-  import { useToast } from "~/composables/UseToast";
+  import useToast from "~/composables/UseToast";
   import useAuthStore from "~/stores/auth";
 
   const auth = useAuthStore();
