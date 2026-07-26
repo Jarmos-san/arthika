@@ -2,33 +2,42 @@
   import { useHead } from "nuxt/app";
   import { ref } from "vue";
 
+  import { useToast } from "~/composables/UseToast";
   import type { RegisterErrors } from "~/types/utils/validators";
   import { validateRegister } from "~/utils/validators";
 
-  // Add a title for the page
   useHead({
     title: "Register",
   });
 
-  // Set up the initial state for the form fields
   const email = ref<string | undefined>(undefined);
   const password = ref<string | undefined>(undefined);
   const confirmPassword = ref<string | undefined>(undefined);
 
-  // Create the initial state of the credential errors
   const errors = ref<RegisterErrors>({
     confirmPassword: undefined,
     email: undefined,
     password: undefined,
   });
 
-  // Event handlers for the form submission logic
+  const toast = useToast();
+
   const onSubmit = (): void => {
     errors.value = validateRegister(
       email.value,
       password.value,
       confirmPassword.value,
     );
+
+    if (
+      errors.value.email ||
+      errors.value.password ||
+      errors.value.confirmPassword
+    ) {
+      return;
+    }
+
+    toast.publish("Account created successfully!");
   };
 </script>
 

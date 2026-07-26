@@ -4,4 +4,48 @@
   .btn-primary {
     @apply cursor-pointer rounded-lg bg-stone-800 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-all duration-200 hover:bg-stone-700 hover:shadow-md active:scale-[0.98];
   }
+
+  .app-toast {
+    @apply flex items-center rounded-lg border border-stone-200 bg-white px-4 py-3 shadow-lg;
+    animation: slideIn 200ms ease-out;
+  }
+
+  .app-toast[data-state="closed"] {
+    animation: slideOut 150ms ease-in;
+  }
+
+  .app-toast[data-swipe="move"] {
+    transform: translateX(var(--reka-toast-swipe-move-x));
+  }
+
+  .app-toast[data-swipe="cancel"] {
+    transform: translateX(0);
+    transition: transform 200ms ease-out;
+  }
+
+  .app-toast[data-swipe="end"] {
+    animation: slideOut 100ms ease-out;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideOut {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(100%);
+  }
 }
