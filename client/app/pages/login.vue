@@ -4,7 +4,7 @@
 
   import useAuthStore from "~/stores/auth";
   import type { LoginErrors } from "~/types/utils/validators";
-  import validateLogin from "~/utils/validators";
+  import { validateLogin } from "~/utils/validators";
 
   useHead({ title: "Login" });
 
