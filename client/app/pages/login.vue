@@ -2,20 +2,80 @@
   import { useHead } from "nuxt/app";
   import { ref } from "vue";
 
-  import useAuthStore from "~/stores/auth";
+  import useAuth, {
+    STATUS_NETWORK_ERROR,
+    STATUS_UNAUTHORIZED,
+    STATUS_UNPROCESSABLE,
+  } from "~/composables/useAuth";
+  import useToast from "~/composables/useToast";
   import type { LoginErrors } from "~/types/utils/validators";
   import { validateLogin } from "~/utils/validators";
 
+  // Add a title for the page
   useHead({ title: "Login" });
 
+  // Initialise the state of the login form
   const email = ref<string | undefined>(undefined);
   const password = ref<string | undefined>(undefined);
+  const isSubmitting = ref(false);
 
+  // Initialise the errors to be rendered on the login form
   const errors = ref<LoginErrors>({
     email: undefined,
     password: undefined,
   });
 
+  // Create an instance of the "toast" component from Reka UI
+  const toast = useToast();
+
+  // Utility function to render error message and update the error state
+  const handleLoginError = (status: number, body: unknown): boolean => {
+    if (status === STATUS_UNAUTHORIZED) {
+      toast.publish("Invalid email or password");
+      return true;
+    }
+
+    if (
+      status === STATUS_UNPROCESSABLE &&
+      body &&
+      typeof body === "object" &&
+      "errors" in body
+    ) {
+      for (const validationError of (
+        body as { errors: { field: string; message: string }[] }
+      ).errors) {
+        if (validationError.field in errors.value) {
+          errors.value[validationError.field as keyof LoginErrors] =
+            validationError.message;
+        }
+      }
+      return true;
+    }
+
+    return false;
+  };
+
+  // Utility wrapper to check if the user credentials are valid.
+  const submitLogin = async (): Promise<void> => {
+    const auth = useAuth();
+    const emailValue = email.value ?? "";
+    const passwordValue = password.value ?? "";
+    const result = await auth.login(emailValue, passwordValue);
+
+    if (result.ok) {
+      await navigateTo("/dashboard");
+      return;
+    }
+
+    if (
+      !handleLoginError(result.status, result.body) &&
+      result.status === STATUS_NETWORK_ERROR
+    ) {
+      toast.publish("Something went wrong. Please try again.");
+    }
+  };
+
+  // Event handler for the submit button
   const onSubmit = async (): Promise<void> => {
     errors.value = validateLogin(email.value, password.value);
 
@@ -23,13 +83,12 @@
       return;
     }
 
-    const { login } = useAuthStore();
-
-    if (email.value !== undefined && password.value !== undefined) {
-      login(email.value, password.value);
+    isSubmitting.value = true;
+    try {
+      await submitLogin();
+    } finally {
+      isSubmitting.value = false;
     }
-
-    await navigateTo("/dashboard");
   };
 </script>
 
@@ -83,9 +142,9 @@
           </p>
         </div>
 
-        <button class="btn-primary mt-1" type="submit">
-          <span>Log In</span>
-          <span class="hidden">Logging in...</span>
+        <button class="btn-primary mt-1" :disabled="isSubmitting" type="submit">
+          <span v-if="!isSubmitting">Log In</span>
+          <span v-else>Logging in...</span>
         </button>
       </form>
 

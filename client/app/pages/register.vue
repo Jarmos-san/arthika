@@ -2,27 +2,88 @@
   import { useHead } from "nuxt/app";
   import { ref } from "vue";
 
+  import useAuth, {
+    STATUS_CONFLICT,
+    STATUS_NETWORK_ERROR,
+    STATUS_UNPROCESSABLE,
+  } from "~/composables/useAuth";
   import useToast from "~/composables/useToast";
   import type { RegisterErrors } from "~/types/utils/validators";
   import { validateRegister } from "~/utils/validators";
 
-  useHead({
-    title: "Register",
-  });
+  // Set the title of the page
+  useHead({ title: "Register" });
 
+  // Initialise the state of the registration form
   const email = ref<string | undefined>(undefined);
   const password = ref<string | undefined>(undefined);
   const confirmPassword = ref<string | undefined>(undefined);
+  const isSubmitting = ref(false);
 
+  // Initialise the registration errors object
   const errors = ref<RegisterErrors>({
     confirmPassword: undefined,
     email: undefined,
     password: undefined,
   });
 
+  // Create an instance of the toast component
   const toast = useToast();
 
-  const onSubmit = (): void => {
+  // Utility wrapper for the registration form
+  const handleRegisterError = (status: number, body: unknown): boolean => {
+    if (
+      status === STATUS_CONFLICT &&
+      body &&
+      typeof body === "object" &&
+      "message" in body
+    ) {
+      errors.value.email = (body as { message: string }).message;
+      return true;
+    }
+
+    if (
+      status === STATUS_UNPROCESSABLE &&
+      body &&
+      typeof body === "object" &&
+      "errors" in body
+    ) {
+      for (const validationError of (
+        body as { errors: { field: string; message: string }[] }
+      ).errors) {
+        if (validationError.field in errors.value) {
+          errors.value[validationError.field as keyof RegisterErrors] =
+            validationError.message;
+        }
+      }
+      return true;
+    }
+
+    return false;
+  };
+
+  // Utility wrapper for the register button's event handler
+  const submitRegistration = async (): Promise<void> => {
+    const auth = useAuth();
+    const emailValue = email.value ?? "";
+    const passwordValue = password.value ?? "";
+    const result = await auth.register(emailValue, passwordValue);
+
+    if (result.ok) {
+      await navigateTo("/dashboard");
+      return;
+    }
+
+    if (
+      !handleRegisterError(result.status, result.body) &&
+      result.status === STATUS_NETWORK_ERROR
+    ) {
+      toast.publish("Something went wrong. Please try again.");
+    }
+  };
+
+  // Even handler for the register button
+  const onSubmit = async (): Promise<void> => {
     errors.value = validateRegister(
       email.value,
       password.value,
@@ -37,7 +98,12 @@
       return;
     }
 
-    toast.publish("Account created successfully!");
+    isSubmitting.value = true;
+    try {
+      await submitRegistration();
+    } finally {
+      isSubmitting.value = false;
+    }
   };
 </script>
 
@@ -117,7 +183,10 @@
         </div>
 
         <!-- Submission button -->
-        <button class="btn-primary mt-1" type="submit">Create Account</button>
+        <button class="btn-primary mt-1" :disabled="isSubmitting" type="submit">
+          <span v-if="!isSubmitting">Create Account</span>
+          <span v-else>Creating account...</span>
+        </button>
       </form>
       <p class="mt-6 text-center text-sm text-stone-400">
         Have an account?
