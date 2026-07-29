@@ -129,6 +129,25 @@ interface UseAuth {
 const USER_STATE_KEY = "auth-user";
 
 /**
+ * @description Fetches the current user session from the server and invokes the provided
+ * setter with the result. Called during composable initialisation via
+ * `useAsyncData`.
+ *
+ * @param {(value: CurrentUserResponse | undefined) => void} setUser - Callback
+ *   to update the user state.
+ */
+const fetchCurrentUserSession = async (
+  setUser: (value: Readonly<CurrentUserResponse> | undefined) => void,
+): Promise<void> => {
+  try {
+    const data = await $fetch<CurrentUserResponse>("/api/users/current-user");
+    setUser(data);
+  } catch {
+    setUser(undefined);
+  }
+};
+
+/**
  * @description Composable for managing authentication state. Uses `useState` to persist the
  * user across the SSR boundary and `useAsyncData` to fetch the current session
  * on mount. Provides `login` and `register` methods that update the shared
@@ -140,12 +159,9 @@ const useAuth = (): UseAuth => {
   const user = useState<CurrentUserResponse | undefined>(USER_STATE_KEY);
 
   void useAsyncData(`${USER_STATE_KEY}:session`, async () => {
-    try {
-      const data = await $fetch<CurrentUserResponse>("/api/users/current-user");
-      user.value = data;
-    } catch {
-      user.value = undefined;
-    }
+    await fetchCurrentUserSession((value) => {
+      user.value = value;
+    });
 
     // oxlint-disable-next-line unicorn/no-null
     return null;

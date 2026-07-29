@@ -47,6 +47,7 @@ export default defineConfig({
           "error",
           { allowedVariables: ["CI", "GITHUB_ACTIONS"] },
         ],
+        "node/no-top-level-await": "allow",
         "typescript/strict-boolean-expressions": "allow",
       },
     },
