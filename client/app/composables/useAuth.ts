@@ -137,10 +137,8 @@ const USER_STATE_KEY = "auth-user";
  * @returns {UseAuth} An object with `isAuthenticated`, `login`, and `register`.
  */
 const useAuth = (): UseAuth => {
-  // Initialise an "undefined" state for the user.
   const user = useState<CurrentUserResponse | undefined>(USER_STATE_KEY);
 
-  // Try to set the state of the user based on its authentication state.
   void useAsyncData(`${USER_STATE_KEY}:session`, async () => {
     try {
       const data = await $fetch<CurrentUserResponse>("/api/users/current-user");
@@ -153,31 +151,22 @@ const useAuth = (): UseAuth => {
     return null;
   });
 
-  // Boolean flag to check if the user is authenticated
   const isAuthenticated = computed(() => user.value !== undefined);
 
-  /**
-   * @description Authenticates the user with email and password. On success the server sets
-   * an HttpOnly cookie and the user state is updated.
-   *
-   * @param {string} email - The user's email address.
-   * @param {string} password - The user's password.
-   *
-   * @returns {Promise<ApiResult>} Result with status and optional error body.
-   */
-  const login = async (email: string, password: string): Promise<ApiResult> => {
+  const submitAuth = async (
+    url: string,
+    credentials: Readonly<{ email: string; password: string }>,
+    successStatus: number,
+  ): Promise<ApiResult> => {
     try {
-      const data = await $fetch<CurrentUserResponse>("/api/users/login", {
-        body: { email, password },
+      const data = await $fetch<CurrentUserResponse>(url, {
+        body: { email: credentials.email, password: credentials.password },
         method: "POST",
       });
 
       user.value = data;
 
-      return {
-        ok: true,
-        status: STATUS_OK,
-      };
+      return { ok: true, status: successStatus };
     } catch (error: unknown) {
       return {
         body: getErrorBody(error),
@@ -187,38 +176,25 @@ const useAuth = (): UseAuth => {
     }
   };
 
-  /**
-   * @description Registers a new user with email and password. On success the server sets an
-   * HttpOnly cookie and the user state is updated.
-   *
-   * @param {string} email - The user's email address.
-   * @param {string} password - The user's password.
-   *
-   * @returns {Promise<ApiResult>} Result with status and optional error body.
-   */
+  const login = async (email: string, password: string): Promise<ApiResult> => {
+    const result = await submitAuth(
+      "/api/users/login",
+      { email, password },
+      STATUS_OK,
+    );
+    return result;
+  };
+
   const register = async (
     email: string,
     password: string,
   ): Promise<ApiResult> => {
-    try {
-      const data = await $fetch<CurrentUserResponse>("/api/users/register", {
-        body: { email, password },
-        method: "POST",
-      });
-
-      user.value = data;
-
-      return {
-        ok: true,
-        status: STATUS_CREATED,
-      };
-    } catch (error: unknown) {
-      return {
-        body: getErrorBody(error),
-        ok: false,
-        status: getErrorStatus(error),
-      };
-    }
+    const result = await submitAuth(
+      "/api/users/register",
+      { email, password },
+      STATUS_CREATED,
+    );
+    return result;
   };
 
   return { isAuthenticated, login, register };
