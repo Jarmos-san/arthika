@@ -45,6 +45,15 @@ servers:
       (default :8000).
 
 # ---------------------------------------------------------------------------
+# Security
+# Reference: https://spec.openapis.org/oas/v3.1.1#security-object
+# All endpoints require the AuthCookie by default. Public endpoints must
+# explicitly opt out with `security: []` at the operation level.
+# ---------------------------------------------------------------------------
+security:
+  - AuthCookie: []
+
+# ---------------------------------------------------------------------------
 # Paths
 # Reference: https://spec.openapis.org/oas/v3.1.1#paths-object
 # Each path maps to a corresponding handler method registered in
@@ -53,6 +62,7 @@ servers:
 paths:
   /ping:
     get:
+      security: []
       tags: [System]
       summary: Server health check
       description: >-
@@ -71,6 +81,7 @@ paths:
 
   /users/register:
     post:
+      security: []
       tags: [Users]
       summary: Register a new user
       description: >-
@@ -116,6 +127,7 @@ paths:
 
   /setup/status:
     get:
+      security: []
       tags: [System]
       summary: Check if the system needs initial setup
       description: >-
@@ -167,6 +179,7 @@ paths:
 
   /users/login:
     post:
+      security: []
       tags: [Users]
       summary: Authenticate a user
       description: >-
@@ -360,6 +373,15 @@ paths:
 # specified package.
 # ---------------------------------------------------------------------------
 components:
+  securitySchemes:
+    AuthCookie:
+      type: apiKey
+      in: cookie
+      name: auth_token
+      description: >-
+        HttpOnly cookie containing a signed JWT, set during login or
+        registration. Passed automatically by the browser on every request.
+
   schemas:
     # Response payload for the GET /ping health check endpoint.
     # Confirms the server is running and accepting requests. The status
