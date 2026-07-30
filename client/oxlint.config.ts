@@ -19,6 +19,7 @@ export default defineConfig({
     vue: true,
   },
   globals: {
+    $fetch: "readonly",
     defineNuxtRouteMiddleware: "readonly",
     navigateTo: "readonly",
   },
@@ -46,6 +47,7 @@ export default defineConfig({
           "error",
           { allowedVariables: ["CI", "GITHUB_ACTIONS"] },
         ],
+        "node/no-top-level-await": "allow",
         "typescript/strict-boolean-expressions": "allow",
       },
     },
@@ -53,6 +55,10 @@ export default defineConfig({
       files: ["tests/**/*.test.ts"],
       rules: {
         "import/no-relative-parent-imports": "allow",
+        "max-lines-per-function": "allow",
+        "max-statements": "allow",
+        "unicorn/filename-case": ["error", { case: "camelCase" }],
+        "vitest/no-hooks": ["warn", { allow: ["afterEach", "beforeEach"] }],
         "vitest/no-importing-vitest-globals": "allow",
         "vitest/prefer-strict-boolean-matchers": "allow",
       },
@@ -60,6 +66,7 @@ export default defineConfig({
     {
       files: ["app/middleware/**/*.ts"],
       rules: {
+        "eslint/require-await": "allow",
         "import/no-default-export": "allow",
         "typescript/prefer-readonly-parameter-types": "allow",
       },
@@ -117,8 +124,21 @@ export default defineConfig({
   ],
   rules: {
     "eslint/sort-imports": "off",
+    "import/consistent-type-specifier-style": [
+      "warn",
+      "prefer-top-level-if-only-type-imports",
+    ],
+    "init-declarations": ["warn", "never"],
+    "max-lines-per-function": [
+      "warn",
+      {
+        skipBlankLines: true,
+        skipComments: true,
+      },
+    ],
     "no-default-export": "allow",
     "no-undefined": "allow",
+    "no-void": ["warn", { allowAsStatement: true }],
     "oxc/no-async-await": "allow",
   },
   settings: {
