@@ -17,6 +17,10 @@ const getRedirectPath = (
   isAuthenticated: boolean,
   targetPath: string,
 ): string | undefined => {
+  if (targetPath === "/") {
+    return "/dashboard";
+  }
+
   if (isAuthenticated && targetPath === "/login") {
     return "/dashboard";
   }
