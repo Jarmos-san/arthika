@@ -24,12 +24,12 @@ go test ./server/internal/handler/ -run TestRegister_Success
 - Entrypoint: `server/cmd/server/main.go`
 - Layers: **Handler → Repository** (no service package — deliberate MVP choice)
 - Server packages under `server/internal/`: `api/`, `app/`, `auth/`, `config/`, `handler/`, `logger/`, `middleware/`, `repository/`
-- Client app layout: `client/app/` with `pages/`, `components/`, `stores/`, `utils/`, `middleware/`, `layouts/`, `assets/`, `openapi/`, `types/`
+- Client app layout: `client/app/` with `pages/`, `components/`, `composables/`, `stores/`, `utils/`, `middleware/`, `layouts/`, `assets/`, `openapi/`, `types/`
 - API spec: `openapi.yml` (project root) — JSON:API format (`application/vnd.api+json`)
 - Routing: `go-chi/chi/v5` with strict server interface (`oapi-codegen`)
 - Logging: `slog` JSON handler to stdout
 - Database: SQLite via `golang-migrate` (auto-applied at startup)
-- Config from env vars: `ADDR`, `READ_TIMEOUT`, `WRITE_TIMEOUT`, `IDLE_TIMEOUT`, `LOG_LEVEL`, `TOKEN_SECRET`, `DATABASE_URL`, `MIGRATIONS_DIR`
+- Config from env vars: `ADDR`, `READ_TIMEOUT`, `WRITE_TIMEOUT`, `IDLE_TIMEOUT`, `LOG_LEVEL`, `TOKEN_SECRET`, `DATABASE_URL`, `MIGRATIONS_DIR`, `COOKIE_SECURE`
 - Docs served at `/docs` (Redoc UI) and `/openapi.json`
 
 ## Code generation
@@ -43,8 +43,7 @@ cd client && pnpm run openapi:generate                # kubb → client/app/open
 ```
 
 Shortcut: `task oapi:gen` runs all three in order.
-
-**`task server:generate` is broken** — it references a non-existent `oapi-codegen` subtask. Use `task oapi:gen` instead.
+`task server:generate` runs sqlc + oapi:server only (no client output).
 
 Run codegen after changing `db/query/*.sql` (sqlc) or `openapi.yml` (oapi-codegen + kubb), then commit generated files.
 
@@ -54,6 +53,7 @@ Run codegen after changing `db/query/*.sql` (sqlc) or `openapi.yml` (oapi-codege
 - UI: `reka-ui` (headless components via `reka-ui/nuxt` module)
 - Styling: Tailwind CSS v4 via `@tailwindcss/vite`
 - Package manager: `pnpm` (lockfile `pnpm-lock.yaml`)
+- Dev server proxies `/api/**` to `http://localhost:8000/api/**` (nuxt.config.ts nitro routeRules)
 - Linting: `oxlint` (`pnpm lint`) — config in `client/oxlint.config.ts`
 - Formatting: `oxfmt` (`pnpm fmt` / `pnpm fmt:check`)
 - TypeScript API types: kubb (`pnpm run openapi:generate` → `client/app/openapi/`)
@@ -95,7 +95,7 @@ Three workflows on PR to `main`:
 
 ## Conventions
 
-- `depguard` restricts `internal/*.go` to stdlib imports only
+- `depguard` restricts `internal/*.go` to stdlib imports only (flat glob — sub-packages like `internal/handler/` are **not** covered)
 - `wsl_v5` is disabled in `.golangci.yml` (was previously enabled)
 - Go: tab indentation; JSON/YAML/TS/Vue/CSS: 2-space (see `.editorconfig`)
 - Formatters: `gci`, `gofmt`, `gofumpt`, `goimports`, `golines` (via golangci-lint)
