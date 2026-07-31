@@ -49,11 +49,15 @@ export default defineConfig({
     },
     {
       files: ["tests/**/*.test.ts"],
+      globals: {
+        document: "readonly",
+      },
       rules: {
         "import/no-relative-parent-imports": "allow",
         "max-lines-per-function": "allow",
         "max-statements": "allow",
-        "unicorn/filename-case": ["error", { case: "camelCase" }],
+        "typescript/ban-ts-comment": "off",
+        "typescript/prefer-ts-expect-error": "off",
         "vitest/no-hooks": ["warn", { allow: ["afterEach", "beforeEach"] }],
         "vitest/no-importing-vitest-globals": "allow",
         "vitest/prefer-strict-boolean-matchers": "allow",
@@ -78,7 +82,10 @@ export default defineConfig({
       },
     },
     {
-      files: ["app/types/components/**/*.ts"],
+      files: [
+        "app/types/components/**/*.ts",
+        "tests/nuxt/components/**/*.test.ts",
+      ],
       rules: {
         "unicorn/filename-case": ["error", { case: "pascalCase" }],
       },
@@ -96,7 +103,7 @@ export default defineConfig({
       rules: { "unicorn/filename-case": ["error", { case: "pascalCase" }] },
     },
     {
-      files: ["app/composables/**/*.ts"],
+      files: ["app/composables/**/*.ts", "tests/nuxt/composables/**/*.test.ts"],
       rules: {
         "import/no-named-export": "allow",
         "unicorn/filename-case": ["error", { case: "camelCase" }],
