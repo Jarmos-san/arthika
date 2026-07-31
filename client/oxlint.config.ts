@@ -43,10 +43,6 @@ export default defineConfig({
         "import/no-default-export": "allow",
         "no-ternary": "allow",
         "no-undefined": "allow",
-        "node/no-process-env": [
-          "error",
-          { allowedVariables: ["CI", "GITHUB_ACTIONS"] },
-        ],
         "node/no-top-level-await": "allow",
         "typescript/strict-boolean-expressions": "allow",
       },
@@ -140,6 +136,10 @@ export default defineConfig({
     "no-default-export": "allow",
     "no-undefined": "allow",
     "no-void": ["warn", { allowAsStatement: true }],
+    "node/no-process-env": [
+      "error",
+      { allowedVariables: ["CI", "GITHUB_ACTIONS", "NODE_ENV"] },
+    ],
     "oxc/no-async-await": "allow",
   },
   settings: {
