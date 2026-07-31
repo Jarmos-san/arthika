@@ -1,4 +1,8 @@
-import type { LoginErrors, RegisterErrors } from "~/types/utils/validators";
+import type {
+  AssetClassFormErrors,
+  LoginErrors,
+  RegisterErrors,
+} from "~/types/utils/validators";
 
 /** @description Minimum number of characters required for the password field. */
 const MIN_PASSWORD_LENGTH = 8;
@@ -69,4 +73,24 @@ const validateRegister = (
   return errors;
 };
 
-export { validateLogin, validateRegister };
+/**
+ * @description Validates the asset class name field against the same rules the server
+ * enforces (name is required). Returns an object with an error message for the
+ * field, or `undefined` if valid.
+ *
+ * @param {string | undefined} name - The name value to validate.
+ *
+ * @returns {AssetClassFormErrors} An object containing validation errors for
+ *   the field.
+ */
+const validateAssetClass = (name: string | undefined): AssetClassFormErrors => {
+  const errors: AssetClassFormErrors = { name: undefined };
+
+  if (name === undefined || name.trim() === "") {
+    errors.name = "Name is required";
+  }
+
+  return errors;
+};
+
+export { validateAssetClass, validateLogin, validateRegister };
