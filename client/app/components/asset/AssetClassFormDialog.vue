@@ -6,7 +6,7 @@
   import type {
     AssetClass,
     AssetClassInput,
-  } from "~/types/composables/asset-classes";
+  } from "~/types/composables/useAssetClasses";
   import type { AssetClassErrors } from "~/types/utils/validators";
   import { validateAssetClass } from "~/utils/validators";
 

@@ -94,7 +94,11 @@ export default defineConfig({
       rules: { "unicorn/filename-case": ["error", { case: "pascalCase" }] },
     },
     {
-      files: ["app/composables/**/*.ts", "tests/nuxt/composables/**/*.test.ts"],
+      files: [
+        "app/composables/**/*.ts",
+        "app/types/composables/**/*.ts",
+        "tests/nuxt/composables/**/*.test.ts",
+      ],
       rules: {
         "import/no-named-export": "allow",
         "unicorn/filename-case": ["error", { case: "camelCase" }],

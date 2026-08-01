@@ -3,7 +3,7 @@ import { ref, type Ref } from "vue";
 import type {
   AssetClass,
   AssetClassInput,
-} from "~/types/composables/asset-classes";
+} from "~/types/composables/useAssetClasses";
 
 /** @description Simulated network latency for stub CRUD operations, in milliseconds. */
 const STUB_LATENCY_MS = 400;

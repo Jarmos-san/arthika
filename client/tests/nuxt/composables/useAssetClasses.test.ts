@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { UseAssetClasses } from "~/composables/useAssetClasses";
-import type { AssetClass } from "~/types/composables/asset-classes";
+import type { AssetClass } from "~/types/composables/useAssetClasses";
 
 vi.setConfig({ testTimeout: 10_000 });
 

@@ -7,7 +7,7 @@
   import AssetClassTable from "~/components/asset/AssetClassTable.vue";
   import useAssetClasses from "~/composables/useAssetClasses";
   import useToast from "~/composables/useToast";
-  import type { AssetClass } from "~/types/composables/asset-classes";
+  import type { AssetClass } from "~/types/composables/useAssetClasses";
 
   useHead({ title: "Dashboard" });
 

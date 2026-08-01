@@ -1,4 +1,4 @@
-import type { AssetClass } from "~/types/composables/asset-classes";
+import type { AssetClass } from "~/types/composables/useAssetClasses";
 
 /**
  * @description Modal dialog for creating and editing asset classes. The dialog owns the form
