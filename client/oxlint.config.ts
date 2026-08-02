@@ -43,10 +43,6 @@ export default defineConfig({
         "import/no-default-export": "allow",
         "no-ternary": "allow",
         "no-undefined": "allow",
-        "node/no-process-env": [
-          "error",
-          { allowedVariables: ["CI", "GITHUB_ACTIONS"] },
-        ],
         "node/no-top-level-await": "allow",
         "typescript/strict-boolean-expressions": "allow",
       },
@@ -57,7 +53,6 @@ export default defineConfig({
         "import/no-relative-parent-imports": "allow",
         "max-lines-per-function": "allow",
         "max-statements": "allow",
-        "unicorn/filename-case": ["error", { case: "camelCase" }],
         "vitest/no-hooks": ["warn", { allow: ["afterEach", "beforeEach"] }],
         "vitest/no-importing-vitest-globals": "allow",
         "vitest/prefer-strict-boolean-matchers": "allow",
@@ -99,7 +94,11 @@ export default defineConfig({
       rules: { "unicorn/filename-case": ["error", { case: "pascalCase" }] },
     },
     {
-      files: ["app/composables/**/*.ts"],
+      files: [
+        "app/composables/**/*.ts",
+        "app/types/composables/**/*.ts",
+        "tests/nuxt/composables/**/*.test.ts",
+      ],
       rules: {
         "import/no-named-export": "allow",
         "unicorn/filename-case": ["error", { case: "camelCase" }],
@@ -108,6 +107,14 @@ export default defineConfig({
     {
       files: ["app/**/*.ts"],
       rules: { "import/no-named-export": "allow" },
+    },
+    {
+      files: ["tests/nuxt/components/**/*.test.ts"],
+      rules: {
+        "typescript/ban-ts-comment": "off",
+        "typescript/prefer-ts-expect-error": "allow",
+        "unicorn/filename-case": ["error", { case: "pascalCase" }],
+      },
     },
   ],
   plugins: [
@@ -139,6 +146,11 @@ export default defineConfig({
     "no-default-export": "allow",
     "no-undefined": "allow",
     "no-void": ["warn", { allowAsStatement: true }],
+    "node/no-process-env": [
+      "error",
+      { allowedVariables: ["CI", "GITHUB_ACTIONS", "NODE_ENV"] },
+    ],
+
     "oxc/no-async-await": "allow",
   },
   settings: {

@@ -16,4 +16,10 @@ interface RegisterErrors {
   confirmPassword: string | undefined;
 }
 
-export type { LoginErrors, RegisterErrors };
+/** @description Validation errors for the asset class form fields. */
+interface AssetClassErrors {
+  /** @description Error message for the name field, or `undefined` if valid. */
+  name: string | undefined;
+}
+
+export type { AssetClassErrors, LoginErrors, RegisterErrors };

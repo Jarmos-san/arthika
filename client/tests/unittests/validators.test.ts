@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { validateLogin } from "../../app/utils/validators";
+import { validateAssetClass, validateLogin } from "../../app/utils/validators";
 
 vi.setConfig({ testTimeout: 10_000 });
 
@@ -73,4 +73,45 @@ describe("validateLogin", () => {
       args.expected,
     );
   });
+});
+
+type AssetClassErrorTestCase = Readonly<{
+  expected: string | undefined;
+  name: string;
+  value: string | undefined;
+}>;
+
+const assetClassErrorTestCases: readonly AssetClassErrorTestCase[] = [
+  {
+    expected: "Name is required",
+    name: "undefined name",
+    value: undefined,
+  },
+  {
+    expected: "Name is required",
+    name: "empty name",
+    value: "",
+  },
+  {
+    expected: "Name is required",
+    name: "whitespace only name",
+    value: "   ",
+  },
+  {
+    expected: undefined,
+    name: "valid name",
+    value: "Equities",
+  },
+];
+
+describe("validateAssetClass", () => {
+  it.each(assetClassErrorTestCases)(
+    "returns correct errors for $name",
+    (args: AssetClassErrorTestCase) => {
+      expect.hasAssertions();
+      expect(validateAssetClass(args.value)).toStrictEqual({
+        name: args.expected,
+      });
+    },
+  );
 });
