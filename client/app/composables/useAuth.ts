@@ -35,7 +35,7 @@ const STATUS_NETWORK_ERROR = 0;
  */
 const getErrorStatus = (error: unknown): number => {
   if (typeof error === "object" && error !== null && "status" in error) {
-    const { status } = error as { status: unknown };
+    const { status } = error;
     if (typeof status === "number") {
       return status;
     }
@@ -56,7 +56,7 @@ const isErrorResponse = (value: unknown): value is ErrorResponse =>
   typeof value === "object" &&
   value !== null &&
   "message" in value &&
-  typeof (value as { message: unknown }).message === "string";
+  typeof value.message === "string";
 
 /**
  * @description Type guard that checks whether a value matches the `ValidationErrors` shape
@@ -70,7 +70,7 @@ const isValidationErrors = (value: unknown): value is ValidationErrors =>
   typeof value === "object" &&
   value !== null &&
   "errors" in value &&
-  Array.isArray((value as { errors: unknown }).errors);
+  Array.isArray(value.errors);
 
 /**
  * @description Extracts the parsed error body from a `$fetch` error. Returns `undefined` for
@@ -85,7 +85,7 @@ const getErrorBody = (
   error: unknown,
 ): ErrorResponse | ValidationErrors | undefined => {
   if (typeof error === "object" && error !== null && "data" in error) {
-    const { data } = error as { data: unknown };
+    const { data } = error;
     if (isErrorResponse(data)) {
       return data;
     }
