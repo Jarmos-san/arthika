@@ -73,6 +73,7 @@
 
 <template>
   <div class="mx-auto w-full max-w-4xl px-6 py-10">
+    <!-- Header section containing the button to add new assets among other features -->
     <header class="flex items-end justify-between gap-4">
       <div>
         <h1 class="text-3xl font-semibold tracking-tight text-stone-800">
@@ -94,6 +95,7 @@
       </button>
     </header>
 
+    <!-- Table containing the list of asset classes currently tracked -->
     <main class="mt-8">
       <AssetClassTable
         :asset-classes="assetClasses"
@@ -103,12 +105,14 @@
       />
     </main>
 
+    <!-- Modal form with edit/add asset class instructions -->
     <AssetClassFormDialog
       v-model:open="isFormOpen"
       :asset="editingAsset"
       @saved="onSaved"
     />
 
+    <!-- Modal with delete confirmation message -->
     <AssetClassConfirmDialog
       v-model:open="isConfirmOpen"
       :asset="pendingDelete"
