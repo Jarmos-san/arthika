@@ -1,6 +1,5 @@
 <script setup lang="ts">
   import type { AssetClass } from "~/types/composables/useAssetClasses";
-  import getFolioCode from "~/utils/asset-classes";
 
   interface Props {
     /** @description Asset classes to render as ledger rows. */
@@ -31,11 +30,6 @@
             <th
               class="px-6 py-3.5 font-mono text-xs font-medium tracking-wider text-stone-400 uppercase"
             >
-              Folio
-            </th>
-            <th
-              class="px-6 py-3.5 font-mono text-xs font-medium tracking-wider text-stone-400 uppercase"
-            >
               Class
             </th>
             <th
@@ -54,9 +48,6 @@
             :key="assetClass.id"
             class="transition-colors duration-150 hover:bg-stone-50/60"
           >
-            <td class="px-6 py-4 font-mono text-xs text-stone-400">
-              {{ getFolioCode(assetClass.name) }}
-            </td>
             <td class="px-6 py-4 font-medium text-stone-800">
               {{ assetClass.name }}
             </td>
