@@ -17,14 +17,15 @@ func TestCurrentUser_Success(t *testing.T) {
 	t.Parallel()
 
 	mock := &mockQuerier{
-		createUserFn:         nil,
-		findUserByEmailFn:    nil,
-		countUsersFn:         nil,
-		createAssetClassFn:   nil,
-		deleteAssetClassFn:   nil,
-		findAssetClassByIDFn: nil,
-		listAssetClassesFn:   nil,
-		updateAssetClassFn:   nil,
+		createUserFn:           nil,
+		findUserByEmailFn:      nil,
+		countUsersFn:           nil,
+		createAssetClassFn:     nil,
+		deleteAssetClassFn:     nil,
+		findAssetClassByIDFn:   nil,
+		findAssetClassByNameFn: nil,
+		listAssetClassesFn:     nil,
+		updateAssetClassFn:     nil,
 	}
 
 	hdl := handler.NewHandler(slog.Default(), mock)
@@ -61,14 +62,15 @@ func TestCurrentUser_InvalidUUID(t *testing.T) {
 	t.Parallel()
 
 	mock := &mockQuerier{
-		createUserFn:         nil,
-		findUserByEmailFn:    nil,
-		countUsersFn:         nil,
-		createAssetClassFn:   nil,
-		deleteAssetClassFn:   nil,
-		findAssetClassByIDFn: nil,
-		listAssetClassesFn:   nil,
-		updateAssetClassFn:   nil,
+		createUserFn:           nil,
+		findUserByEmailFn:      nil,
+		countUsersFn:           nil,
+		createAssetClassFn:     nil,
+		deleteAssetClassFn:     nil,
+		findAssetClassByIDFn:   nil,
+		findAssetClassByNameFn: nil,
+		listAssetClassesFn:     nil,
+		updateAssetClassFn:     nil,
 	}
 
 	hdl := handler.NewHandler(slog.Default(), mock)
@@ -88,14 +90,15 @@ func TestCurrentUser_HTTPEndpoint_Success(t *testing.T) {
 	t.Parallel()
 
 	mock := &mockQuerier{
-		createUserFn:         nil,
-		findUserByEmailFn:    nil,
-		countUsersFn:         nil,
-		createAssetClassFn:   nil,
-		deleteAssetClassFn:   nil,
-		findAssetClassByIDFn: nil,
-		listAssetClassesFn:   nil,
-		updateAssetClassFn:   nil,
+		createUserFn:           nil,
+		findUserByEmailFn:      nil,
+		countUsersFn:           nil,
+		createAssetClassFn:     nil,
+		deleteAssetClassFn:     nil,
+		findAssetClassByIDFn:   nil,
+		findAssetClassByNameFn: nil,
+		listAssetClassesFn:     nil,
+		updateAssetClassFn:     nil,
 	}
 
 	hdl := handler.NewHandler(slog.Default(), mock)
