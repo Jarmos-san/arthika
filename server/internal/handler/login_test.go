@@ -41,7 +41,12 @@ func TestLogin_Success(t *testing.T) {
 				PasswordHash: testPasswordHash,
 			}, nil
 		},
-		countUsersFn: nil,
+		countUsersFn:         nil,
+		createAssetClassFn:   nil,
+		deleteAssetClassFn:   nil,
+		findAssetClassByIDFn: nil,
+		listAssetClassesFn:   nil,
+		updateAssetClassFn:   nil,
 	}
 
 	hdl := handler.NewHandler(slog.Default(), mock)
@@ -83,7 +88,12 @@ func TestLogin_WrongPassword(t *testing.T) {
 				PasswordHash: testPasswordHash,
 			}, nil
 		},
-		countUsersFn: nil,
+		countUsersFn:         nil,
+		createAssetClassFn:   nil,
+		deleteAssetClassFn:   nil,
+		findAssetClassByIDFn: nil,
+		listAssetClassesFn:   nil,
+		updateAssetClassFn:   nil,
 	}
 
 	hdl := handler.NewHandler(slog.Default(), mock)
@@ -122,7 +132,12 @@ func TestLogin_EmailNotFound(t *testing.T) {
 		findUserByEmailFn: func(_ context.Context, _ string) (repository.User, error) {
 			return repository.User{}, sql.ErrNoRows
 		},
-		countUsersFn: nil,
+		countUsersFn:         nil,
+		createAssetClassFn:   nil,
+		deleteAssetClassFn:   nil,
+		findAssetClassByIDFn: nil,
+		listAssetClassesFn:   nil,
+		updateAssetClassFn:   nil,
 	}
 
 	hdl := handler.NewHandler(slog.Default(), mock)
@@ -152,13 +167,20 @@ func TestLogin_EmailNotFound(t *testing.T) {
 }
 
 // TestLogin_InvalidEmail verifies that a malformed email returns 422.
+//
+//nolint:dupl // Validation scaffold mirrors the Register counterpart.
 func TestLogin_InvalidEmail(t *testing.T) {
 	t.Parallel()
 
 	mock := &mockQuerier{
-		createUserFn:      nil,
-		findUserByEmailFn: nil,
-		countUsersFn:      nil,
+		createUserFn:         nil,
+		findUserByEmailFn:    nil,
+		countUsersFn:         nil,
+		createAssetClassFn:   nil,
+		deleteAssetClassFn:   nil,
+		findAssetClassByIDFn: nil,
+		listAssetClassesFn:   nil,
+		updateAssetClassFn:   nil,
 	}
 
 	hdl := handler.NewHandler(slog.Default(), mock)
@@ -193,9 +215,14 @@ func TestLogin_NilBody(t *testing.T) {
 	t.Parallel()
 
 	mock := &mockQuerier{
-		createUserFn:      nil,
-		findUserByEmailFn: nil,
-		countUsersFn:      nil,
+		createUserFn:         nil,
+		findUserByEmailFn:    nil,
+		countUsersFn:         nil,
+		createAssetClassFn:   nil,
+		deleteAssetClassFn:   nil,
+		findAssetClassByIDFn: nil,
+		listAssetClassesFn:   nil,
+		updateAssetClassFn:   nil,
 	}
 
 	hdl := handler.NewHandler(slog.Default(), mock)
@@ -219,13 +246,20 @@ func TestLogin_NilBody(t *testing.T) {
 }
 
 // TestLogin_EmptyPassword verifies that an empty password returns 422.
+//
+//nolint:dupl // Validation scaffold mirrors the Register counterpart.
 func TestLogin_EmptyPassword(t *testing.T) {
 	t.Parallel()
 
 	mock := &mockQuerier{
-		createUserFn:      nil,
-		findUserByEmailFn: nil,
-		countUsersFn:      nil,
+		createUserFn:         nil,
+		findUserByEmailFn:    nil,
+		countUsersFn:         nil,
+		createAssetClassFn:   nil,
+		deleteAssetClassFn:   nil,
+		findAssetClassByIDFn: nil,
+		listAssetClassesFn:   nil,
+		updateAssetClassFn:   nil,
 	}
 
 	hdl := handler.NewHandler(slog.Default(), mock)
@@ -269,7 +303,12 @@ func TestLogin_HTTPEndpoint_Success(t *testing.T) {
 				PasswordHash: testPasswordHash,
 			}, nil
 		},
-		countUsersFn: nil,
+		countUsersFn:         nil,
+		createAssetClassFn:   nil,
+		deleteAssetClassFn:   nil,
+		findAssetClassByIDFn: nil,
+		listAssetClassesFn:   nil,
+		updateAssetClassFn:   nil,
 	}
 
 	hdl := handler.NewHandler(slog.Default(), mock)
@@ -326,7 +365,12 @@ func TestLogin_HTTPEndpoint_BadCredentials(t *testing.T) {
 				PasswordHash: testPasswordHash,
 			}, nil
 		},
-		countUsersFn: nil,
+		countUsersFn:         nil,
+		createAssetClassFn:   nil,
+		deleteAssetClassFn:   nil,
+		findAssetClassByIDFn: nil,
+		listAssetClassesFn:   nil,
+		updateAssetClassFn:   nil,
 	}
 
 	hdl := handler.NewHandler(slog.Default(), mock)
@@ -355,9 +399,14 @@ func TestLogin_HTTPEndpoint_InvalidBody(t *testing.T) {
 	t.Parallel()
 
 	mock := &mockQuerier{
-		createUserFn:      nil,
-		findUserByEmailFn: nil,
-		countUsersFn:      nil,
+		createUserFn:         nil,
+		findUserByEmailFn:    nil,
+		countUsersFn:         nil,
+		createAssetClassFn:   nil,
+		deleteAssetClassFn:   nil,
+		findAssetClassByIDFn: nil,
+		listAssetClassesFn:   nil,
+		updateAssetClassFn:   nil,
 	}
 
 	hdl := handler.NewHandler(slog.Default(), mock)
