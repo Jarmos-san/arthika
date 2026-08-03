@@ -1,0 +1,13 @@
+{
+  "type": "object",
+  "required": ["name", "description"],
+  "properties": {
+    "name": { "type": "string", "minLength": 1, "example": "Equities" },
+    "description": {
+      "type": "string",
+      "example": "Public stocks, ETFs, and index funds"
+    }
+  },
+  "additionalProperties": false,
+  "x-readme-ref-name": "AssetClassInput"
+}

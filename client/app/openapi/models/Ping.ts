@@ -2,18 +2,12 @@
 
 import type { PingResponse } from "./PingResponse.ts";
 
-/** @type object */
-export type PingStatus200 = PingResponse;
+/** @description OK. */
+export type Ping200 = PingResponse;
 
-/** @type object */
-export interface PingRequestConfig {
-  body?: never;
-  path?: never;
-  query?: never;
-  headers?: never;
-}
+export type PingQueryResponse = Ping200;
 
-/** @type object */
-export interface PingResponses {
-  "200": PingStatus200;
+export interface PingQuery {
+  Response: Ping200;
+  Errors: any;
 }

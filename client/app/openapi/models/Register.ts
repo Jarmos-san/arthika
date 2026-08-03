@@ -5,29 +5,21 @@ import type { RegisterRequest } from "./RegisterRequest.ts";
 import type { RegisterResponse } from "./RegisterResponse.ts";
 import type { ValidationErrors } from "./ValidationErrors.ts";
 
-/** @type object */
-export type RegisterStatus201 = RegisterResponse;
+/** @description User created and authenticated. */
+export type Register201 = RegisterResponse;
 
-/** @type object */
-export type RegisterStatus409 = ErrorResponse;
+/** @description Conflict — email already registered. */
+export type Register409 = ErrorResponse;
 
-/** @type object */
-export type RegisterStatus422 = ValidationErrors;
+/** @description Unprocessable entity — validation error. */
+export type Register422 = ValidationErrors;
 
-/** @type object */
-export type RegisterData = RegisterRequest;
+export type RegisterMutationRequest = RegisterRequest;
 
-/** @type object */
-export interface RegisterRequestConfig {
-  body: RegisterData;
-  path?: never;
-  query?: never;
-  headers?: never;
-}
+export type RegisterMutationResponse = Register201;
 
-/** @type object */
-export interface RegisterResponses {
-  "201": RegisterStatus201;
-  "409": RegisterStatus409;
-  "422": RegisterStatus422;
+export interface RegisterMutation {
+  Response: Register201;
+  Request: RegisterMutationRequest;
+  Errors: Register409 | Register422;
 }

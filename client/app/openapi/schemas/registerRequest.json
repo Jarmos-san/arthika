@@ -1,0 +1,14 @@
+{
+  "type": "object",
+  "required": ["email", "password"],
+  "properties": {
+    "email": {
+      "type": "string",
+      "format": "email",
+      "example": "user@example.com"
+    },
+    "password": { "type": "string", "minLength": 8, "example": "secureP@ss123" }
+  },
+  "additionalProperties": false,
+  "x-readme-ref-name": "RegisterRequest"
+}

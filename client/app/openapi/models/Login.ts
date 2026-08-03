@@ -5,29 +5,21 @@ import type { LoginRequest } from "./LoginRequest.ts";
 import type { LoginResponse } from "./LoginResponse.ts";
 import type { ValidationErrors } from "./ValidationErrors.ts";
 
-/** @type object */
-export type LoginStatus200 = LoginResponse;
+/** @description Authentication successful. */
+export type Login200 = LoginResponse;
 
-/** @type object */
-export type LoginStatus401 = ErrorResponse;
+/** @description Unauthorized — invalid email or password. */
+export type Login401 = ErrorResponse;
 
-/** @type object */
-export type LoginStatus422 = ValidationErrors;
+/** @description Unprocessable entity — validation error. */
+export type Login422 = ValidationErrors;
 
-/** @type object */
-export type LoginData = LoginRequest;
+export type LoginMutationRequest = LoginRequest;
 
-/** @type object */
-export interface LoginRequestConfig {
-  body: LoginData;
-  path?: never;
-  query?: never;
-  headers?: never;
-}
+export type LoginMutationResponse = Login200;
 
-/** @type object */
-export interface LoginResponses {
-  "200": LoginStatus200;
-  "401": LoginStatus401;
-  "422": LoginStatus422;
+export interface LoginMutation {
+  Response: Login200;
+  Request: LoginMutationRequest;
+  Errors: Login401 | Login422;
 }
