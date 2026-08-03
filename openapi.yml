@@ -51,6 +51,175 @@ servers:
 # server/cmd/server/main.go using the Chi router.
 # ---------------------------------------------------------------------------
 paths:
+  # ---------------------------------------------------------------------------
+  # Asset class management
+  # ---------------------------------------------------------------------------
+  /assets:
+    post:
+      tags: [Asset Classes]
+      summary: Create an asset class
+      description: >-
+        Creates a new asset class with the given name and description. Requires
+        authentication.
+      operationId: createAsset
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AssetClassInput"
+      responses:
+        "201":
+          description: Asset class created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AssetClass"
+        "401":
+          description: Unauthorized — no valid session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: Unprocessable entity — validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationErrors"
+
+    get:
+      tags: [Asset Classes]
+      summary: List asset classes
+      description: >-
+        Returns all asset classes tracked by the current user. Requires
+        authentication.
+      operationId: listAssets
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AssetClass"
+        "401":
+          description: Unauthorized — no valid session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /assets/{id}:
+    get:
+      tags: [Asset Classes]
+      summary: Get an asset class
+      description: >-
+        Returns a single asset class by ID. Requires authentication.
+      operationId: getAsset
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AssetClass"
+        "401":
+          description: Unauthorized — no valid session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found — no asset class with this ID
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    patch:
+      tags: [Asset Classes]
+      summary: Update an asset class
+      description: >-
+        Replaces the name and description of an asset class. Requires
+        authentication.
+      operationId: updateAsset
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AssetClassInput"
+      responses:
+        "200":
+          description: Asset class updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AssetClass"
+        "401":
+          description: Unauthorized — no valid session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found — no asset class with this ID
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: Unprocessable entity — validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationErrors"
+
+    delete:
+      tags: [Asset Classes]
+      summary: Delete an asset class
+      description: >-
+        Removes an asset class by ID. Requires authentication.
+      operationId: deleteAsset
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Asset class deleted
+        "401":
+          description: Unauthorized — no valid session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found — no asset class with this ID
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /ping:
     get:
       tags: [System]
@@ -351,6 +520,41 @@ components:
           example: user@example.com
       additionalProperties: false
 
+    AssetClass:
+      type: object
+      required:
+        - id
+        - name
+        - description
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 550e8400-e29b-41d4-a716-446655440000
+        name:
+          type: string
+          minLength: 1
+          example: Equities
+        description:
+          type: string
+          example: Public stocks, ETFs, and index funds
+      additionalProperties: false
+
+    AssetClassInput:
+      type: object
+      required:
+        - name
+        - description
+      properties:
+        name:
+          type: string
+          minLength: 1
+          example: Equities
+        description:
+          type: string
+          example: Public stocks, ETFs, and index funds
+      additionalProperties: false
+
 # ---------------------------------------------------------------------------
 # Tag definitions
 # Reference: https://spec.openapis.org/oas/v3.1.1#tag-object
@@ -370,6 +574,11 @@ tags:
     description: >-
       Endpoints for user account management, including registration,
       authentication, and profile operations.
+
+  - name: Asset Classes
+    description: >-
+      Endpoints for managing asset classes — the top-level categories
+      (e.g. Equities, Fixed income, Crypto) used to group holdings.
 
 # ---------------------------------------------------------------------------
 # External documentation

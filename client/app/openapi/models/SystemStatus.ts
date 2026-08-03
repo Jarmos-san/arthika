@@ -2,18 +2,12 @@
 
 import type { SystemStatusResponse } from "./SystemStatusResponse.ts";
 
-/** @type object */
-export type SystemStatusStatus200 = SystemStatusResponse;
+/** @description OK. */
+export type SystemStatus200 = SystemStatusResponse;
 
-/** @type object */
-export interface SystemStatusRequestConfig {
-  body?: never;
-  path?: never;
-  query?: never;
-  headers?: never;
-}
+export type SystemStatusQueryResponse = SystemStatus200;
 
-/** @type object */
-export interface SystemStatusResponses {
-  "200": SystemStatusStatus200;
+export interface SystemStatusQuery {
+  Response: SystemStatus200;
+  Errors: any;
 }

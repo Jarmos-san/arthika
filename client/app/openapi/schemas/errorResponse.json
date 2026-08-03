@@ -1,0 +1,8 @@
+{
+  "type": "object",
+  "required": ["message"],
+  "properties": {
+    "message": { "type": "string", "example": "email already registered" }
+  },
+  "x-readme-ref-name": "ErrorResponse"
+}

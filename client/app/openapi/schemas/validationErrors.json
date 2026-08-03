@@ -1,0 +1,19 @@
+{
+  "type": "object",
+  "required": ["errors"],
+  "properties": {
+    "errors": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["field", "message"],
+        "properties": {
+          "field": { "type": "string", "example": "email" },
+          "message": { "type": "string", "example": "email is required" }
+        },
+        "x-readme-ref-name": "ValidationError"
+      }
+    }
+  },
+  "x-readme-ref-name": "ValidationErrors"
+}

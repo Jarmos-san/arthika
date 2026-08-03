@@ -2,7 +2,6 @@
 
 import type { ValidationError } from "./ValidationError.ts";
 
-/** @type object */
 export interface ValidationErrors {
   /** @type array */
   errors: ValidationError[];

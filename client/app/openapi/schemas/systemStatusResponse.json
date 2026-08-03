@@ -1,0 +1,12 @@
+{
+  "type": "object",
+  "required": ["needsSetup"],
+  "properties": {
+    "needsSetup": {
+      "type": "boolean",
+      "description": "Whether the system needs initial setup. True when no users exist.",
+      "example": true
+    }
+  },
+  "x-readme-ref-name": "SystemStatusResponse"
+}

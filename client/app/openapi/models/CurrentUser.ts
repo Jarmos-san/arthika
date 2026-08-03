@@ -3,22 +3,15 @@
 import type { CurrentUserResponse } from "./CurrentUserResponse.ts";
 import type { ErrorResponse } from "./ErrorResponse.ts";
 
-/** @type object */
-export type CurrentUserStatus200 = CurrentUserResponse;
+/** @description Current user info. */
+export type CurrentUser200 = CurrentUserResponse;
 
-/** @type object */
-export type CurrentUserStatus401 = ErrorResponse;
+/** @description Unauthorized — no valid session. */
+export type CurrentUser401 = ErrorResponse;
 
-/** @type object */
-export interface CurrentUserRequestConfig {
-  body?: never;
-  path?: never;
-  query?: never;
-  headers?: never;
-}
+export type CurrentUserQueryResponse = CurrentUser200;
 
-/** @type object */
-export interface CurrentUserResponses {
-  "200": CurrentUserStatus200;
-  "401": CurrentUserStatus401;
+export interface CurrentUserQuery {
+  Response: CurrentUser200;
+  Errors: CurrentUser401;
 }
