@@ -7,6 +7,7 @@ package repository
 
 import (
 	"context"
+	"database/sql"
 )
 
 const createAssetClass = `-- name: CreateAssetClass :exec
@@ -17,7 +18,7 @@ VALUES (?, ?, ?)
 type CreateAssetClassParams struct {
 	ID          string
 	Name        string
-	Description interface{}
+	Description sql.NullString
 }
 
 // CreateAssetClass
@@ -110,7 +111,7 @@ RETURNING id, name, description
 
 type UpdateAssetClassParams struct {
 	Name        string
-	Description interface{}
+	Description sql.NullString
 	ID          string
 }
 

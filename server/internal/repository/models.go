@@ -4,10 +4,14 @@
 
 package repository
 
+import (
+	"database/sql"
+)
+
 type AssetClass struct {
 	ID          string
 	Name        string
-	Description interface{}
+	Description sql.NullString
 }
 
 type User struct {
