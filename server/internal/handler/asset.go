@@ -59,7 +59,7 @@ func newAssetClassStore() *assetClassStore {
 		asset := api.AssetClass{
 			Id:          uuid.New(),
 			Name:        seed.name,
-			Description: seed.description,
+			Description: &seed.description,
 		}
 		store.items[asset.Id.String()] = asset
 	}
@@ -72,7 +72,7 @@ func (s *assetClassStore) create(name, description string) api.AssetClass {
 	asset := api.AssetClass{
 		Id:          uuid.New(),
 		Name:        name,
-		Description: description,
+		Description: &description,
 	}
 
 	s.mu.Lock()
@@ -124,7 +124,7 @@ func (s *assetClassStore) update(assetID, name, description string) (
 	}
 
 	asset.Name = name
-	asset.Description = description
+	asset.Description = &description
 	s.items[assetID] = asset
 
 	return asset, true
@@ -143,6 +143,16 @@ func (s *assetClassStore) delete(assetID string) bool {
 	delete(s.items, assetID)
 
 	return true
+}
+
+// trimOptional returns the trimmed value of an optional string field, or an
+// empty string when the field is absent.
+func trimOptional(s *string) string {
+	if s == nil {
+		return ""
+	}
+
+	return strings.TrimSpace(*s)
 }
 
 // validateAssetClassInput mirrors the client-side rule in
@@ -182,7 +192,7 @@ func (h *Handler) CreateAsset(
 	}
 
 	name := strings.TrimSpace(req.Body.Name)
-	description := strings.TrimSpace(req.Body.Description)
+	description := trimOptional(req.Body.Description)
 
 	if errs := validateAssetClassInput(name); len(errs) > 0 {
 		return api.CreateAsset422JSONResponse{Errors: errs}, nil
@@ -236,7 +246,7 @@ func (h *Handler) UpdateAsset(
 	}
 
 	name := strings.TrimSpace(req.Body.Name)
-	description := strings.TrimSpace(req.Body.Description)
+	description := trimOptional(req.Body.Description)
 
 	if errs := validateAssetClassInput(name); len(errs) > 0 {
 		return api.UpdateAsset422JSONResponse{Errors: errs}, nil
