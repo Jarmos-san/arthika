@@ -13,17 +13,48 @@ type Querier interface {
 	//
 	//  SELECT COUNT(*) FROM users
 	CountUsers(ctx context.Context) (int64, error)
+	//CreateAssetClass
+	//
+	//  INSERT INTO asset_classes (id, name, description)
+	//  VALUES (?, ?, ?)
+	CreateAssetClass(ctx context.Context, arg CreateAssetClassParams) error
 	//CreateUser
 	//
 	//  INSERT INTO users (id, email, password_hash)
 	//  VALUES (?, ?, ?)
 	CreateUser(ctx context.Context, arg CreateUserParams) error
+	//DeleteAssetClass
+	//
+	//  DELETE FROM asset_classes
+	//  WHERE id = ?
+	//  RETURNING id
+	DeleteAssetClass(ctx context.Context, id string) (string, error)
+	//FindAssetClassByID
+	//
+	//  SELECT id, name, description
+	//  FROM asset_classes
+	//  WHERE id = ?
+	//  LIMIT 1
+	FindAssetClassByID(ctx context.Context, id string) (AssetClass, error)
 	//FindUserByEmail
 	//
 	//  SELECT id, email, password_hash
 	//  FROM users
 	//  WHERE email = ? LIMIT 1
 	FindUserByEmail(ctx context.Context, email string) (User, error)
+	//ListAssetClasses
+	//
+	//  SELECT id, name, description
+	//  FROM asset_classes
+	//  ORDER BY name COLLATE NOCASE ASC
+	ListAssetClasses(ctx context.Context) ([]AssetClass, error)
+	//UpdateAssetClass
+	//
+	//  UPDATE asset_classes
+	//  SET name = ?, description = ?
+	//  WHERE id = ?
+	//  RETURNING id, name, description
+	UpdateAssetClass(ctx context.Context, arg UpdateAssetClassParams) (AssetClass, error)
 }
 
 var _ Querier = (*Queries)(nil)

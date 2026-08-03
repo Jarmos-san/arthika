@@ -26,9 +26,14 @@ const (
 // mockQuerier implements repository.Querier with configurable function fields.
 // Each test sets only the functions it needs; nil functions panic if called.
 type mockQuerier struct {
-	createUserFn      func(ctx context.Context, arg repository.CreateUserParams) error
-	findUserByEmailFn func(ctx context.Context, email string) (repository.User, error)
-	countUsersFn      func(ctx context.Context) (int64, error)
+	createUserFn         func(ctx context.Context, arg repository.CreateUserParams) error
+	findUserByEmailFn    func(ctx context.Context, email string) (repository.User, error)
+	countUsersFn         func(ctx context.Context) (int64, error)
+	createAssetClassFn   func(ctx context.Context, arg repository.CreateAssetClassParams) error
+	deleteAssetClassFn   func(ctx context.Context, id string) (string, error)
+	findAssetClassByIDFn func(ctx context.Context, id string) (repository.AssetClass, error)
+	listAssetClassesFn   func(ctx context.Context) ([]repository.AssetClass, error)
+	updateAssetClassFn   func(ctx context.Context, arg repository.UpdateAssetClassParams) (repository.AssetClass, error)
 }
 
 // CreateUser delegates to m.createUserFn.
@@ -52,6 +57,40 @@ func (m *mockQuerier) CountUsers(ctx context.Context) (int64, error) {
 	return m.countUsersFn(ctx)
 }
 
+// CreateAssetClass delegates to m.createAssetClassFn.
+func (m *mockQuerier) CreateAssetClass(
+	ctx context.Context,
+	arg repository.CreateAssetClassParams,
+) error {
+	return m.createAssetClassFn(ctx, arg)
+}
+
+// DeleteAssetClass delegates to m.deleteAssetClassFn.
+func (m *mockQuerier) DeleteAssetClass(ctx context.Context, id string) (string, error) {
+	return m.deleteAssetClassFn(ctx, id)
+}
+
+// FindAssetClassByID delegates to m.findAssetClassByIDFn.
+func (m *mockQuerier) FindAssetClassByID(
+	ctx context.Context,
+	id string,
+) (repository.AssetClass, error) {
+	return m.findAssetClassByIDFn(ctx, id)
+}
+
+// ListAssetClasses delegates to m.listAssetClassesFn.
+func (m *mockQuerier) ListAssetClasses(ctx context.Context) ([]repository.AssetClass, error) {
+	return m.listAssetClassesFn(ctx)
+}
+
+// UpdateAssetClass delegates to m.updateAssetClassFn.
+func (m *mockQuerier) UpdateAssetClass(
+	ctx context.Context,
+	arg repository.UpdateAssetClassParams,
+) (repository.AssetClass, error) {
+	return m.updateAssetClassFn(ctx, arg)
+}
+
 // TestRegister_Success verifies a valid request returns 201 with the registered email.
 func TestRegister_Success(t *testing.T) {
 	t.Parallel()
@@ -63,7 +102,12 @@ func TestRegister_Success(t *testing.T) {
 		findUserByEmailFn: func(_ context.Context, _ string) (repository.User, error) {
 			return repository.User{}, sql.ErrNoRows
 		},
-		countUsersFn: nil,
+		countUsersFn:         nil,
+		createAssetClassFn:   nil,
+		deleteAssetClassFn:   nil,
+		findAssetClassByIDFn: nil,
+		listAssetClassesFn:   nil,
+		updateAssetClassFn:   nil,
 	}
 
 	hdl := handler.NewHandler(slog.Default(), mock)
@@ -105,7 +149,12 @@ func TestRegister_DuplicateEmail(t *testing.T) {
 				PasswordHash: "",
 			}, nil
 		},
-		countUsersFn: nil,
+		countUsersFn:         nil,
+		createAssetClassFn:   nil,
+		deleteAssetClassFn:   nil,
+		findAssetClassByIDFn: nil,
+		listAssetClassesFn:   nil,
+		updateAssetClassFn:   nil,
 	}
 
 	hdl := handler.NewHandler(slog.Default(), mock)
@@ -132,13 +181,20 @@ func TestRegister_DuplicateEmail(t *testing.T) {
 }
 
 // TestRegister_InvalidEmail verifies that a malformed email returns 422.
+//
+//nolint:dupl // Validation scaffold mirrors the Login counterpart.
 func TestRegister_InvalidEmail(t *testing.T) {
 	t.Parallel()
 
 	mock := &mockQuerier{
-		createUserFn:      nil,
-		findUserByEmailFn: nil,
-		countUsersFn:      nil,
+		createUserFn:         nil,
+		findUserByEmailFn:    nil,
+		countUsersFn:         nil,
+		createAssetClassFn:   nil,
+		deleteAssetClassFn:   nil,
+		findAssetClassByIDFn: nil,
+		listAssetClassesFn:   nil,
+		updateAssetClassFn:   nil,
 	}
 
 	hdl := handler.NewHandler(slog.Default(), mock)
@@ -169,13 +225,20 @@ func TestRegister_InvalidEmail(t *testing.T) {
 }
 
 // TestRegister_ShortPassword verifies that a password shorter than 8 chars returns 422.
+//
+//nolint:dupl // Validation scaffold mirrors the Login counterpart.
 func TestRegister_ShortPassword(t *testing.T) {
 	t.Parallel()
 
 	mock := &mockQuerier{
-		createUserFn:      nil,
-		findUserByEmailFn: nil,
-		countUsersFn:      nil,
+		createUserFn:         nil,
+		findUserByEmailFn:    nil,
+		countUsersFn:         nil,
+		createAssetClassFn:   nil,
+		deleteAssetClassFn:   nil,
+		findAssetClassByIDFn: nil,
+		listAssetClassesFn:   nil,
+		updateAssetClassFn:   nil,
 	}
 
 	hdl := handler.NewHandler(slog.Default(), mock)
@@ -210,9 +273,14 @@ func TestRegister_NilBody(t *testing.T) {
 	t.Parallel()
 
 	mock := &mockQuerier{
-		createUserFn:      nil,
-		findUserByEmailFn: nil,
-		countUsersFn:      nil,
+		createUserFn:         nil,
+		findUserByEmailFn:    nil,
+		countUsersFn:         nil,
+		createAssetClassFn:   nil,
+		deleteAssetClassFn:   nil,
+		findAssetClassByIDFn: nil,
+		listAssetClassesFn:   nil,
+		updateAssetClassFn:   nil,
 	}
 
 	hdl := handler.NewHandler(slog.Default(), mock)
@@ -247,7 +315,12 @@ func TestRegister_HTTPEndpoint_Success(t *testing.T) {
 		findUserByEmailFn: func(_ context.Context, _ string) (repository.User, error) {
 			return repository.User{}, sql.ErrNoRows
 		},
-		countUsersFn: nil,
+		countUsersFn:         nil,
+		createAssetClassFn:   nil,
+		deleteAssetClassFn:   nil,
+		findAssetClassByIDFn: nil,
+		listAssetClassesFn:   nil,
+		updateAssetClassFn:   nil,
 	}
 
 	hdl := handler.NewHandler(slog.Default(), mock)
@@ -317,7 +390,12 @@ func TestRegister_HTTPEndpoint_DuplicateEmail(t *testing.T) {
 				PasswordHash: "",
 			}, nil
 		},
-		countUsersFn: nil,
+		countUsersFn:         nil,
+		createAssetClassFn:   nil,
+		deleteAssetClassFn:   nil,
+		findAssetClassByIDFn: nil,
+		listAssetClassesFn:   nil,
+		updateAssetClassFn:   nil,
 	}
 
 	hdl := handler.NewHandler(slog.Default(), mock)
@@ -345,9 +423,14 @@ func TestRegister_HTTPEndpoint_InvalidBody(t *testing.T) {
 	t.Parallel()
 
 	mock := &mockQuerier{
-		createUserFn:      nil,
-		findUserByEmailFn: nil,
-		countUsersFn:      nil,
+		createUserFn:         nil,
+		findUserByEmailFn:    nil,
+		countUsersFn:         nil,
+		createAssetClassFn:   nil,
+		deleteAssetClassFn:   nil,
+		findAssetClassByIDFn: nil,
+		listAssetClassesFn:   nil,
+		updateAssetClassFn:   nil,
 	}
 
 	hdl := handler.NewHandler(slog.Default(), mock)
@@ -382,7 +465,12 @@ func TestRegister_HTTPEndpoint_CookieAttributes(t *testing.T) {
 		findUserByEmailFn: func(_ context.Context, _ string) (repository.User, error) {
 			return repository.User{}, sql.ErrNoRows
 		},
-		countUsersFn: nil,
+		countUsersFn:         nil,
+		createAssetClassFn:   nil,
+		deleteAssetClassFn:   nil,
+		findAssetClassByIDFn: nil,
+		listAssetClassesFn:   nil,
+		updateAssetClassFn:   nil,
 	}
 
 	hdl := handler.NewHandler(slog.Default(), mock)

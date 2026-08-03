@@ -15,9 +15,14 @@ func TestLogout_Success(t *testing.T) {
 	t.Parallel()
 
 	mock := &mockQuerier{
-		createUserFn:      nil,
-		findUserByEmailFn: nil,
-		countUsersFn:      nil,
+		createUserFn:         nil,
+		findUserByEmailFn:    nil,
+		countUsersFn:         nil,
+		createAssetClassFn:   nil,
+		deleteAssetClassFn:   nil,
+		findAssetClassByIDFn: nil,
+		listAssetClassesFn:   nil,
+		updateAssetClassFn:   nil,
 	}
 
 	hdl := handler.NewHandler(slog.Default(), mock)
@@ -39,9 +44,14 @@ func TestLogout_HTTPEndpoint_Success(t *testing.T) {
 	t.Parallel()
 
 	mock := &mockQuerier{
-		createUserFn:      nil,
-		findUserByEmailFn: nil,
-		countUsersFn:      nil,
+		createUserFn:         nil,
+		findUserByEmailFn:    nil,
+		countUsersFn:         nil,
+		createAssetClassFn:   nil,
+		deleteAssetClassFn:   nil,
+		findAssetClassByIDFn: nil,
+		listAssetClassesFn:   nil,
+		updateAssetClassFn:   nil,
 	}
 
 	hdl := handler.NewHandler(slog.Default(), mock)
@@ -89,9 +99,14 @@ func TestLogout_HTTPEndpoint_CookieAttributes(t *testing.T) {
 	t.Parallel()
 
 	mock := &mockQuerier{
-		createUserFn:      nil,
-		findUserByEmailFn: nil,
-		countUsersFn:      nil,
+		createUserFn:         nil,
+		findUserByEmailFn:    nil,
+		countUsersFn:         nil,
+		createAssetClassFn:   nil,
+		deleteAssetClassFn:   nil,
+		findAssetClassByIDFn: nil,
+		listAssetClassesFn:   nil,
+		updateAssetClassFn:   nil,
 	}
 
 	hdl := handler.NewHandler(slog.Default(), mock)

@@ -1,7 +1,7 @@
 version: "3"
 
 vars:
-  DB_URL: sqlite3://db/arthika.db
+  DB_URL: sqlite://db/arthika.db
   MIGRATIONS_DIR: db/migrations
   MIGRATE_INSTALL_TAGS: sqlite3
   MIGRATE_INSTALL_URL: github.com/golang-migrate/migrate/v4/cmd/migrate@latest
