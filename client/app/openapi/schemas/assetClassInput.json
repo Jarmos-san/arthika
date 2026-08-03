@@ -1,6 +1,6 @@
 {
   "type": "object",
-  "required": ["name", "description"],
+  "required": ["name"],
   "properties": {
     "name": { "type": "string", "minLength": 1, "example": "Equities" },
     "description": {

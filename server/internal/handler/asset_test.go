@@ -82,6 +82,15 @@ func decodeAsset(t *testing.T, rec *httptest.ResponseRecorder) api.AssetClass {
 	return asset
 }
 
+// assetDescription returns the description with nil collapsed to "".
+func assetDescription(asset api.AssetClass) string {
+	if asset.Description == nil {
+		return ""
+	}
+
+	return *asset.Description
+}
+
 // TestListAssets_Seeded verifies the store starts with the seeded classes in
 // name order.
 func TestListAssets_Seeded(t *testing.T) {
@@ -135,8 +144,8 @@ func TestCreateAsset_Success(t *testing.T) {
 		t.Errorf("expected name %q, got %q", testAssetName, asset.Name)
 	}
 
-	if asset.Description != testAssetDesc {
-		t.Errorf("expected description %q, got %q", testAssetDesc, asset.Description)
+	if got := assetDescription(asset); got != testAssetDesc {
+		t.Errorf("expected description %q, got %q", testAssetDesc, got)
 	}
 
 	listRec := doJSONRequest(t, router, http.MethodGet, "/api/assets", "")
@@ -240,6 +249,29 @@ func TestCreateAsset_WhitespaceName(t *testing.T) {
 	}
 }
 
+// TestCreateAsset_NoDescription verifies the description is optional and
+// stored as empty when omitted.
+func TestCreateAsset_NoDescription(t *testing.T) {
+	t.Parallel()
+
+	router := newAssetRouter(t)
+	rec := doJSONRequest(
+		t,
+		router,
+		http.MethodPost,
+		"/api/assets",
+		fmt.Sprintf(`{"name":%q}`, testAssetName),
+	)
+
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("expected status %d, got %d", http.StatusCreated, rec.Code)
+	}
+
+	if got := assetDescription(decodeAsset(t, rec)); got != "" {
+		t.Errorf("expected empty description, got %q", got)
+	}
+}
+
 // TestGetAsset_Found verifies fetching a created asset class returns 200 with
 // the matching payload.
 func TestGetAsset_Found(t *testing.T) {
@@ -321,8 +353,8 @@ func TestUpdateAsset_Success(t *testing.T) {
 		t.Errorf("expected name %q, got %q", newName, asset.Name)
 	}
 
-	if asset.Description != newDesc {
-		t.Errorf("expected description %q, got %q", newDesc, asset.Description)
+	if got := assetDescription(asset); got != newDesc {
+		t.Errorf("expected description %q, got %q", newDesc, got)
 	}
 }
 
@@ -365,6 +397,31 @@ func TestUpdateAsset_BlankName(t *testing.T) {
 			http.StatusUnprocessableEntity,
 			rec.Code,
 		)
+	}
+}
+
+// TestUpdateAsset_NoDescription verifies omitting the description on update
+// clears it.
+func TestUpdateAsset_NoDescription(t *testing.T) {
+	t.Parallel()
+
+	router := newAssetRouter(t)
+	created := decodeAsset(t, createAsset(t, router, testAssetName))
+
+	rec := doJSONRequest(
+		t,
+		router,
+		http.MethodPatch,
+		"/api/assets/"+created.Id.String(),
+		fmt.Sprintf(`{"name":%q}`, testAssetName),
+	)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d", http.StatusOK, rec.Code)
+	}
+
+	if got := assetDescription(decodeAsset(t, rec)); got != "" {
+		t.Errorf("expected empty description, got %q", got)
 	}
 }
 

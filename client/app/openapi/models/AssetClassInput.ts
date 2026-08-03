@@ -6,6 +6,6 @@ export interface AssetClassInput {
    * @minLength 1
    */
   name: string;
-  /** @type string */
-  description: string;
+  /** @type string | undefined */
+  description?: string;
 }
