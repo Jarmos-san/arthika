@@ -4,6 +4,12 @@
 
 package repository
 
+type AssetClass struct {
+	ID          string
+	Name        string
+	Description interface{}
+}
+
 type User struct {
 	ID           string
 	Email        string
