@@ -22,11 +22,12 @@ func TestSystemStatus_NeedsSetup(t *testing.T) {
 		countUsersFn: func(_ context.Context) (int64, error) {
 			return 0, nil
 		},
-		createAssetClassFn:   nil,
-		deleteAssetClassFn:   nil,
-		findAssetClassByIDFn: nil,
-		listAssetClassesFn:   nil,
-		updateAssetClassFn:   nil,
+		createAssetClassFn:     nil,
+		deleteAssetClassFn:     nil,
+		findAssetClassByIDFn:   nil,
+		findAssetClassByNameFn: nil,
+		listAssetClassesFn:     nil,
+		updateAssetClassFn:     nil,
 	}
 
 	hdl := handler.NewHandler(slog.Default(), mock)
@@ -57,11 +58,12 @@ func TestSystemStatus_NoSetupNeeded(t *testing.T) {
 		countUsersFn: func(_ context.Context) (int64, error) {
 			return 1, nil
 		},
-		createAssetClassFn:   nil,
-		deleteAssetClassFn:   nil,
-		findAssetClassByIDFn: nil,
-		listAssetClassesFn:   nil,
-		updateAssetClassFn:   nil,
+		createAssetClassFn:     nil,
+		deleteAssetClassFn:     nil,
+		findAssetClassByIDFn:   nil,
+		findAssetClassByNameFn: nil,
+		listAssetClassesFn:     nil,
+		updateAssetClassFn:     nil,
 	}
 
 	hdl := handler.NewHandler(slog.Default(), mock)
@@ -92,11 +94,12 @@ func TestSystemStatus_HTTPEndpoint(t *testing.T) {
 		countUsersFn: func(_ context.Context) (int64, error) {
 			return 0, nil
 		},
-		createAssetClassFn:   nil,
-		deleteAssetClassFn:   nil,
-		findAssetClassByIDFn: nil,
-		listAssetClassesFn:   nil,
-		updateAssetClassFn:   nil,
+		createAssetClassFn:     nil,
+		deleteAssetClassFn:     nil,
+		findAssetClassByIDFn:   nil,
+		findAssetClassByNameFn: nil,
+		listAssetClassesFn:     nil,
+		updateAssetClassFn:     nil,
 	}
 
 	hdl := handler.NewHandler(slog.Default(), mock)

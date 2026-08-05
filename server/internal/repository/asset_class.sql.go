@@ -68,6 +68,26 @@ func (q *Queries) FindAssetClassByID(ctx context.Context, id string) (AssetClass
 	return i, err
 }
 
+const findAssetClassByName = `-- name: FindAssetClassByName :one
+SELECT id, name, description
+FROM asset_classes
+WHERE name = ?
+LIMIT 1
+`
+
+// FindAssetClassByName
+//
+//	SELECT id, name, description
+//	FROM asset_classes
+//	WHERE name = ?
+//	LIMIT 1
+func (q *Queries) FindAssetClassByName(ctx context.Context, name string) (AssetClass, error) {
+	row := q.db.QueryRowContext(ctx, findAssetClassByName, name)
+	var i AssetClass
+	err := row.Scan(&i.ID, &i.Name, &i.Description)
+	return i, err
+}
+
 const listAssetClasses = `-- name: ListAssetClasses :many
 SELECT id, name, description
 FROM asset_classes

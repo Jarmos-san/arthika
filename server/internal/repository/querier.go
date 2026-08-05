@@ -36,6 +36,13 @@ type Querier interface {
 	//  WHERE id = ?
 	//  LIMIT 1
 	FindAssetClassByID(ctx context.Context, id string) (AssetClass, error)
+	//FindAssetClassByName
+	//
+	//  SELECT id, name, description
+	//  FROM asset_classes
+	//  WHERE name = ?
+	//  LIMIT 1
+	FindAssetClassByName(ctx context.Context, name string) (AssetClass, error)
 	//FindUserByEmail
 	//
 	//  SELECT id, email, password_hash

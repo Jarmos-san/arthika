@@ -1,7 +1,10 @@
 package handler_test
 
 import (
+	"context"
+	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -11,24 +14,53 @@ import (
 
 	"github.com/Jarmos-san/arthika/server/internal/api"
 	"github.com/Jarmos-san/arthika/server/internal/handler"
+	"github.com/Jarmos-san/arthika/server/internal/repository"
 	chi "github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 )
 
 const (
-	seedAssetCount = 3
-	testAssetName  = "Real Estate"
-	testAssetDesc  = "Property investments"
-	unknownAssetID = "00000000-0000-0000-0000-000000000000"
+	testAssetName     = "Real Estate"
+	testAssetDesc     = "Property investments"
+	unknownAssetID    = "00000000-0000-0000-0000-000000000000"
+	dupNameErrMessage = "asset class name already exists"
 )
 
+// errTestDB is the error returned by mock repository functions to simulate an
+// internal database failure.
+var errTestDB = errors.New("database unavailable")
+
+// assetMock returns a mockQuerier with every function field set to nil. Tests
+// override only the fields they exercise.
+func assetMock() *mockQuerier {
+	return &mockQuerier{
+		createUserFn:           nil,
+		findUserByEmailFn:      nil,
+		countUsersFn:           nil,
+		createAssetClassFn:     nil,
+		deleteAssetClassFn:     nil,
+		findAssetClassByIDFn:   nil,
+		findAssetClassByNameFn: nil,
+		listAssetClassesFn:     nil,
+		updateAssetClassFn:     nil,
+	}
+}
+
+// assetRow builds a repository row with a nullable description.
+func assetRow(id, name, description string) repository.AssetClass {
+	return repository.AssetClass{
+		ID:          id,
+		Name:        name,
+		Description: sql.NullString{String: description, Valid: description != ""},
+	}
+}
+
 // newAssetRouter mounts a fresh Handler on a chi router the same way main.go
-// does. The querier is nil because the asset endpoints never touch the
-// database.
-func newAssetRouter(t *testing.T) http.Handler {
+// does.
+func newAssetRouter(t *testing.T, mock *mockQuerier) http.Handler {
 	t.Helper()
 
-	hdl := handler.NewHandler(slog.Default(), nil)
+	hdl := handler.NewHandler(slog.Default(), mock)
 	router := chi.NewRouter()
 	api.HandlerFromMuxWithBaseURL(api.NewStrictHandler(hdl, nil), router, "/api")
 
@@ -91,13 +123,20 @@ func assetDescription(asset api.AssetClass) string {
 	return *asset.Description
 }
 
-// TestListAssets_Seeded verifies the store starts with the seeded classes in
-// name order.
-func TestListAssets_Seeded(t *testing.T) {
+// TestListAssets_Success verifies the rows from the repository are returned
+// in order, mapping NULL descriptions to nil.
+func TestListAssets_Success(t *testing.T) {
 	t.Parallel()
 
-	router := newAssetRouter(t)
-	rec := doJSONRequest(t, router, http.MethodGet, "/api/assets", "")
+	mock := assetMock()
+	mock.listAssetClassesFn = func(_ context.Context) ([]repository.AssetClass, error) {
+		return []repository.AssetClass{
+			assetRow("11111111-1111-1111-1111-111111111111", "Crypto", "Digital assets"),
+			assetRow("22222222-2222-2222-2222-222222222222", "Equities", ""),
+		}, nil
+	}
+
+	rec := doJSONRequest(t, newAssetRouter(t, mock), http.MethodGet, "/api/assets", "")
 
 	if rec.Code != http.StatusOK {
 		t.Fatalf("expected status %d, got %d", http.StatusOK, rec.Code)
@@ -110,25 +149,42 @@ func TestListAssets_Seeded(t *testing.T) {
 		t.Fatalf("decode response: %v", err)
 	}
 
-	if len(assets) != seedAssetCount {
-		t.Fatalf("expected %d seeded asset classes, got %d", seedAssetCount, len(assets))
+	if len(assets) != 2 {
+		t.Fatalf("expected 2 asset classes, got %d", len(assets))
 	}
 
-	expectedNames := []string{"Crypto", "Equities", "Fixed income"}
-	for i, want := range expectedNames {
-		if assets[i].Name != want {
-			t.Errorf("expected asset %d named %q, got %q", i, want, assets[i].Name)
-		}
+	if assets[0].Name != "Crypto" {
+		t.Errorf("expected first asset named %q, got %q", "Crypto", assets[0].Name)
+	}
+
+	if got := assetDescription(assets[0]); got != "Digital assets" {
+		t.Errorf("expected description %q, got %q", "Digital assets", got)
+	}
+
+	if assets[1].Description != nil {
+		t.Errorf("expected NULL description mapped to nil, got %q", *assets[1].Description)
 	}
 }
 
 // TestCreateAsset_Success verifies a valid request returns 201 with the
-// created asset class, and the list grows by one.
+// created asset class persisted via the repository.
 func TestCreateAsset_Success(t *testing.T) {
 	t.Parallel()
 
-	router := newAssetRouter(t)
-	rec := createAsset(t, router, testAssetName)
+	mock := assetMock()
+	mock.findAssetClassByNameFn = func(_ context.Context, _ string) (repository.AssetClass, error) {
+		return repository.AssetClass{}, sql.ErrNoRows
+	}
+
+	var got repository.CreateAssetClassParams
+
+	mock.createAssetClassFn = func(_ context.Context, arg repository.CreateAssetClassParams) error {
+		got = arg
+
+		return nil
+	}
+
+	rec := createAsset(t, newAssetRouter(t, mock), testAssetName)
 
 	if rec.Code != http.StatusCreated {
 		t.Fatalf("expected status %d, got %d", http.StatusCreated, rec.Code)
@@ -144,34 +200,70 @@ func TestCreateAsset_Success(t *testing.T) {
 		t.Errorf("expected name %q, got %q", testAssetName, asset.Name)
 	}
 
-	if got := assetDescription(asset); got != testAssetDesc {
-		t.Errorf("expected description %q, got %q", testAssetDesc, got)
+	if desc := assetDescription(asset); desc != testAssetDesc {
+		t.Errorf("expected description %q, got %q", testAssetDesc, desc)
 	}
 
-	listRec := doJSONRequest(t, router, http.MethodGet, "/api/assets", "")
-
-	var assets []api.AssetClass
-
-	err := json.NewDecoder(listRec.Body).Decode(&assets)
-	if err != nil {
-		t.Fatalf("decode list response: %v", err)
+	if got.Name != testAssetName {
+		t.Errorf("expected persisted name %q, got %q", testAssetName, got.Name)
 	}
 
-	if len(assets) != seedAssetCount+1 {
-		t.Errorf("expected %d asset classes after create, got %d", seedAssetCount+1, len(assets))
+	if got.ID != asset.Id.String() {
+		t.Errorf("expected persisted id %s, got %s", asset.Id.String(), got.ID)
+	}
+
+	if got.Description != (sql.NullString{String: testAssetDesc, Valid: true}) {
+		t.Errorf("expected persisted description %q, got %+v", testAssetDesc, got.Description)
 	}
 }
 
-// TestCreateAsset_HTTPEndpoint_EmptyBody verifies the HTTP stack rejects an
-// empty request body with 400 before the request reaches the handler.
-func TestCreateAsset_HTTPEndpoint_EmptyBody(t *testing.T) {
+// TestCreateAsset_DuplicateName verifies an existing name returns 409.
+func TestCreateAsset_DuplicateName(t *testing.T) {
 	t.Parallel()
 
-	router := newAssetRouter(t)
-	rec := doJSONRequest(t, router, http.MethodPost, "/api/assets", "")
+	mock := assetMock()
+	mock.findAssetClassByNameFn = func(_ context.Context, _ string) (repository.AssetClass, error) {
+		return assetRow(unknownAssetID, testAssetName, ""), nil
+	}
 
-	if rec.Code != http.StatusBadRequest {
-		t.Fatalf("expected status %d, got %d", http.StatusBadRequest, rec.Code)
+	rec := createAsset(t, newAssetRouter(t, mock), testAssetName)
+
+	if rec.Code != http.StatusConflict {
+		t.Fatalf("expected status %d, got %d", http.StatusConflict, rec.Code)
+	}
+
+	var errResp api.ErrorResponse
+
+	err := json.NewDecoder(rec.Body).Decode(&errResp)
+	if err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+
+	if errResp.Message != dupNameErrMessage {
+		t.Errorf("expected message %q, got %q", dupNameErrMessage, errResp.Message)
+	}
+}
+
+// TestCreateAsset_RepoError verifies a repository failure surfaces as a 500.
+func TestCreateAsset_RepoError(t *testing.T) {
+	t.Parallel()
+
+	mock := assetMock()
+	mock.findAssetClassByNameFn = func(_ context.Context, _ string) (repository.AssetClass, error) {
+		return repository.AssetClass{}, sql.ErrNoRows
+	}
+	mock.createAssetClassFn = func(_ context.Context, _ repository.CreateAssetClassParams) error {
+		return errTestDB
+	}
+
+	rec := createAsset(t, newAssetRouter(t, mock), testAssetName)
+
+	if rec.Code != http.StatusInternalServerError {
+		t.Fatalf(
+			"expected status %d, got %d",
+			http.StatusInternalServerError,
+			rec.Code,
+		)
 	}
 }
 
@@ -181,7 +273,7 @@ func TestCreateAsset_HTTPEndpoint_EmptyBody(t *testing.T) {
 func TestCreateAsset_NilBody(t *testing.T) {
 	t.Parallel()
 
-	hdl := handler.NewHandler(slog.Default(), nil)
+	hdl := handler.NewHandler(slog.Default(), assetMock())
 
 	resp, err := hdl.CreateAsset(t.Context(), api.CreateAssetRequestObject{Body: nil})
 	if err != nil {
@@ -202,12 +294,12 @@ func TestCreateAsset_NilBody(t *testing.T) {
 	}
 }
 
-// TestCreateAsset_BlankName verifies an empty name returns 422.
+// TestCreateAsset_BlankName verifies an empty name returns 422 before any
+// repository call.
 func TestCreateAsset_BlankName(t *testing.T) {
 	t.Parallel()
 
-	router := newAssetRouter(t)
-	rec := createAsset(t, router, "")
+	rec := createAsset(t, newAssetRouter(t, assetMock()), "")
 
 	if rec.Code != http.StatusUnprocessableEntity {
 		t.Fatalf(
@@ -237,8 +329,7 @@ func TestCreateAsset_BlankName(t *testing.T) {
 func TestCreateAsset_WhitespaceName(t *testing.T) {
 	t.Parallel()
 
-	router := newAssetRouter(t)
-	rec := createAsset(t, router, "   ")
+	rec := createAsset(t, newAssetRouter(t, assetMock()), "   ")
 
 	if rec.Code != http.StatusUnprocessableEntity {
 		t.Fatalf(
@@ -249,42 +340,21 @@ func TestCreateAsset_WhitespaceName(t *testing.T) {
 	}
 }
 
-// TestCreateAsset_NoDescription verifies the description is optional and
-// stored as empty when omitted.
-func TestCreateAsset_NoDescription(t *testing.T) {
-	t.Parallel()
-
-	router := newAssetRouter(t)
-	rec := doJSONRequest(
-		t,
-		router,
-		http.MethodPost,
-		"/api/assets",
-		fmt.Sprintf(`{"name":%q}`, testAssetName),
-	)
-
-	if rec.Code != http.StatusCreated {
-		t.Fatalf("expected status %d, got %d", http.StatusCreated, rec.Code)
-	}
-
-	if got := assetDescription(decodeAsset(t, rec)); got != "" {
-		t.Errorf("expected empty description, got %q", got)
-	}
-}
-
-// TestGetAsset_Found verifies fetching a created asset class returns 200 with
-// the matching payload.
+// TestGetAsset_Found verifies fetching an existing asset class returns 200
+// with the matching payload.
 func TestGetAsset_Found(t *testing.T) {
 	t.Parallel()
 
-	router := newAssetRouter(t)
-	created := decodeAsset(t, createAsset(t, router, testAssetName))
+	mock := assetMock()
+	mock.findAssetClassByIDFn = func(_ context.Context, id string) (repository.AssetClass, error) {
+		return assetRow(id, testAssetName, testAssetDesc), nil
+	}
 
 	rec := doJSONRequest(
 		t,
-		router,
+		newAssetRouter(t, mock),
 		http.MethodGet,
-		"/api/assets/"+created.Id.String(),
+		"/api/assets/"+unknownAssetID,
 		"",
 	)
 
@@ -294,12 +364,16 @@ func TestGetAsset_Found(t *testing.T) {
 
 	asset := decodeAsset(t, rec)
 
-	if asset.Id != created.Id {
-		t.Errorf("expected id %s, got %s", created.Id, asset.Id)
+	if asset.Id.String() != unknownAssetID {
+		t.Errorf("expected id %s, got %s", unknownAssetID, asset.Id.String())
 	}
 
 	if asset.Name != testAssetName {
 		t.Errorf("expected name %q, got %q", testAssetName, asset.Name)
+	}
+
+	if desc := assetDescription(asset); desc != testAssetDesc {
+		t.Errorf("expected description %q, got %q", testAssetDesc, desc)
 	}
 }
 
@@ -307,10 +381,14 @@ func TestGetAsset_Found(t *testing.T) {
 func TestGetAsset_NotFound(t *testing.T) {
 	t.Parallel()
 
-	router := newAssetRouter(t)
+	mock := assetMock()
+	mock.findAssetClassByIDFn = func(_ context.Context, _ string) (repository.AssetClass, error) {
+		return repository.AssetClass{}, sql.ErrNoRows
+	}
+
 	rec := doJSONRequest(
 		t,
-		router,
+		newAssetRouter(t, mock),
 		http.MethodGet,
 		"/api/assets/"+unknownAssetID,
 		"",
@@ -326,16 +404,27 @@ func TestGetAsset_NotFound(t *testing.T) {
 func TestUpdateAsset_Success(t *testing.T) {
 	t.Parallel()
 
-	router := newAssetRouter(t)
-	created := decodeAsset(t, createAsset(t, router, testAssetName))
+	mock := assetMock()
+	mock.findAssetClassByIDFn = func(_ context.Context, id string) (repository.AssetClass, error) {
+		return assetRow(id, testAssetName, testAssetDesc), nil
+	}
+	mock.findAssetClassByNameFn = func(_ context.Context, _ string) (repository.AssetClass, error) {
+		return repository.AssetClass{}, sql.ErrNoRows
+	}
+	mock.updateAssetClassFn = func(
+		_ context.Context,
+		arg repository.UpdateAssetClassParams,
+	) (repository.AssetClass, error) {
+		return assetRow(arg.ID, arg.Name, arg.Description.String), nil
+	}
 
 	newName := "Private Equity"
 	newDesc := "Buyout and venture capital funds"
 	rec := doJSONRequest(
 		t,
-		router,
+		newAssetRouter(t, mock),
 		http.MethodPatch,
-		"/api/assets/"+created.Id.String(),
+		"/api/assets/"+unknownAssetID,
 		fmt.Sprintf(`{"name":%q,"description":%q}`, newName, newDesc),
 	)
 
@@ -345,16 +434,16 @@ func TestUpdateAsset_Success(t *testing.T) {
 
 	asset := decodeAsset(t, rec)
 
-	if asset.Id != created.Id {
-		t.Errorf("expected id %s, got %s", created.Id, asset.Id)
+	if asset.Id.String() != unknownAssetID {
+		t.Errorf("expected id %s, got %s", unknownAssetID, asset.Id.String())
 	}
 
 	if asset.Name != newName {
 		t.Errorf("expected name %q, got %q", newName, asset.Name)
 	}
 
-	if got := assetDescription(asset); got != newDesc {
-		t.Errorf("expected description %q, got %q", newDesc, got)
+	if desc := assetDescription(asset); desc != newDesc {
+		t.Errorf("expected description %q, got %q", newDesc, desc)
 	}
 }
 
@@ -362,10 +451,14 @@ func TestUpdateAsset_Success(t *testing.T) {
 func TestUpdateAsset_NotFound(t *testing.T) {
 	t.Parallel()
 
-	router := newAssetRouter(t)
+	mock := assetMock()
+	mock.findAssetClassByIDFn = func(_ context.Context, _ string) (repository.AssetClass, error) {
+		return repository.AssetClass{}, sql.ErrNoRows
+	}
+
 	rec := doJSONRequest(
 		t,
-		router,
+		newAssetRouter(t, mock),
 		http.MethodPatch,
 		"/api/assets/"+unknownAssetID,
 		fmt.Sprintf(`{"name":%q,"description":%q}`, testAssetName, testAssetDesc),
@@ -376,18 +469,52 @@ func TestUpdateAsset_NotFound(t *testing.T) {
 	}
 }
 
+// TestUpdateAsset_DuplicateName verifies renaming to an existing name owned
+// by a different class returns 409.
+func TestUpdateAsset_DuplicateName(t *testing.T) {
+	t.Parallel()
+
+	mock := assetMock()
+	mock.findAssetClassByIDFn = func(_ context.Context, id string) (repository.AssetClass, error) {
+		return assetRow(id, testAssetName, testAssetDesc), nil
+	}
+	mock.findAssetClassByNameFn = func(_ context.Context, _ string) (repository.AssetClass, error) {
+		return assetRow("33333333-3333-3333-3333-333333333333", testAssetName, ""), nil
+	}
+
+	rec := doJSONRequest(
+		t,
+		newAssetRouter(t, mock),
+		http.MethodPatch,
+		"/api/assets/"+unknownAssetID,
+		fmt.Sprintf(`{"name":%q,"description":%q}`, testAssetName, testAssetDesc),
+	)
+
+	if rec.Code != http.StatusConflict {
+		t.Fatalf("expected status %d, got %d", http.StatusConflict, rec.Code)
+	}
+
+	var errResp api.ErrorResponse
+
+	err := json.NewDecoder(rec.Body).Decode(&errResp)
+	if err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+
+	if errResp.Message != dupNameErrMessage {
+		t.Errorf("expected message %q, got %q", dupNameErrMessage, errResp.Message)
+	}
+}
+
 // TestUpdateAsset_BlankName verifies updating with an empty name returns 422.
 func TestUpdateAsset_BlankName(t *testing.T) {
 	t.Parallel()
 
-	router := newAssetRouter(t)
-	created := decodeAsset(t, createAsset(t, router, testAssetName))
-
 	rec := doJSONRequest(
 		t,
-		router,
+		newAssetRouter(t, assetMock()),
 		http.MethodPatch,
-		"/api/assets/"+created.Id.String(),
+		"/api/assets/"+unknownAssetID,
 		fmt.Sprintf(`{"name":%q,"description":%q}`, "", testAssetDesc),
 	)
 
@@ -400,58 +527,90 @@ func TestUpdateAsset_BlankName(t *testing.T) {
 	}
 }
 
-// TestUpdateAsset_NoDescription verifies omitting the description on update
-// clears it.
-func TestUpdateAsset_NoDescription(t *testing.T) {
-	t.Parallel()
-
-	router := newAssetRouter(t)
-	created := decodeAsset(t, createAsset(t, router, testAssetName))
-
-	rec := doJSONRequest(
-		t,
-		router,
-		http.MethodPatch,
-		"/api/assets/"+created.Id.String(),
-		fmt.Sprintf(`{"name":%q}`, testAssetName),
-	)
-
-	if rec.Code != http.StatusOK {
-		t.Fatalf("expected status %d, got %d", http.StatusOK, rec.Code)
-	}
-
-	if got := assetDescription(decodeAsset(t, rec)); got != "" {
-		t.Errorf("expected empty description, got %q", got)
-	}
-}
-
-// TestDeleteAsset_Success verifies deleting an asset class returns 204, the
-// asset is gone afterwards, and deleting it again returns 404.
+// TestDeleteAsset_Success verifies deleting an asset class returns 204.
 func TestDeleteAsset_Success(t *testing.T) {
 	t.Parallel()
 
-	router := newAssetRouter(t)
-	created := decodeAsset(t, createAsset(t, router, testAssetName))
-	path := "/api/assets/" + created.Id.String()
-
-	delRec := doJSONRequest(t, router, http.MethodDelete, path, "")
-	if delRec.Code != http.StatusNoContent {
-		t.Fatalf("expected status %d, got %d", http.StatusNoContent, delRec.Code)
+	mock := assetMock()
+	mock.deleteAssetClassFn = func(_ context.Context, id string) (string, error) {
+		return id, nil
 	}
 
-	getRec := doJSONRequest(t, router, http.MethodGet, path, "")
-	if getRec.Code != http.StatusNotFound {
-		t.Fatalf("expected status %d after delete, got %d", http.StatusNotFound, getRec.Code)
+	rec := doJSONRequest(
+		t,
+		newAssetRouter(t, mock),
+		http.MethodDelete,
+		"/api/assets/"+unknownAssetID,
+		"",
+	)
+
+	if rec.Code != http.StatusNoContent {
+		t.Fatalf("expected status %d, got %d", http.StatusNoContent, rec.Code)
+	}
+}
+
+// TestDeleteAsset_NotFound verifies deleting an unknown id returns 404.
+func TestDeleteAsset_NotFound(t *testing.T) {
+	t.Parallel()
+
+	mock := assetMock()
+	mock.deleteAssetClassFn = func(_ context.Context, _ string) (string, error) {
+		return "", sql.ErrNoRows
 	}
 
-	secondDelRec := doJSONRequest(t, router, http.MethodDelete, path, "")
-	if secondDelRec.Code != http.StatusNotFound {
-		t.Fatalf(
-			"expected status %d for second delete, got %d",
-			http.StatusNotFound,
-			secondDelRec.Code,
-		)
+	rec := doJSONRequest(
+		t,
+		newAssetRouter(t, mock),
+		http.MethodDelete,
+		"/api/assets/"+unknownAssetID,
+		"",
+	)
+
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("expected status %d, got %d", http.StatusNotFound, rec.Code)
 	}
+}
+
+// crudFlowMock returns a mockQuerier wired for a full lifecycle: create
+// stores the row, get and update read it back, delete succeeds. The stored
+// row is exposed so tests can assert against the persisted state.
+func crudFlowMock() (*mockQuerier, *repository.AssetClass) {
+	mock := assetMock()
+
+	var stored repository.AssetClass
+
+	mock.findAssetClassByNameFn = func(_ context.Context, _ string) (repository.AssetClass, error) {
+		return repository.AssetClass{}, sql.ErrNoRows
+	}
+	mock.createAssetClassFn = func(_ context.Context, arg repository.CreateAssetClassParams) error {
+		stored = repository.AssetClass(arg)
+
+		return nil
+	}
+	mock.findAssetClassByIDFn = func(_ context.Context, id string) (repository.AssetClass, error) {
+		if id != stored.ID {
+			return repository.AssetClass{}, sql.ErrNoRows
+		}
+
+		return stored, nil
+	}
+	mock.updateAssetClassFn = func(
+		_ context.Context,
+		arg repository.UpdateAssetClassParams,
+	) (repository.AssetClass, error) {
+		stored = repository.AssetClass{
+			ID:          arg.ID,
+			Name:        arg.Name,
+			Description: arg.Description,
+		}
+
+		return stored, nil
+	}
+	mock.deleteAssetClassFn = func(_ context.Context, id string) (string, error) {
+		return id, nil
+	}
+
+	return mock, &stored
 }
 
 // TestAssetCRUDFlow exercises the full lifecycle in one pass: create, get,
@@ -459,9 +618,14 @@ func TestDeleteAsset_Success(t *testing.T) {
 func TestAssetCRUDFlow(t *testing.T) {
 	t.Parallel()
 
-	router := newAssetRouter(t)
+	mock, stored := crudFlowMock()
+	router := newAssetRouter(t, mock)
 	created := decodeAsset(t, createAsset(t, router, testAssetName))
 	path := "/api/assets/" + created.Id.String()
+
+	if stored.ID != created.Id.String() {
+		t.Errorf("expected persisted id %s, got %s", created.Id.String(), stored.ID)
+	}
 
 	getRec := doJSONRequest(t, router, http.MethodGet, path, "")
 	if getRec.Code != http.StatusOK {

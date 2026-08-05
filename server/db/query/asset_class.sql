@@ -13,6 +13,12 @@ FROM asset_classes
 WHERE id = ?
 LIMIT 1;
 
+-- name: FindAssetClassByName :one
+SELECT id, name, description
+FROM asset_classes
+WHERE name = ?
+LIMIT 1;
+
 -- name: UpdateAssetClass :one
 UPDATE asset_classes
 SET name = ?, description = ?
