@@ -3,12 +3,12 @@ module github.com/Jarmos-san/arthika/server
 go 1.26.2
 
 require (
-	github.com/getkin/kin-openapi v0.145.0
+	github.com/getkin/kin-openapi v0.146.0
 	github.com/go-chi/chi/v5 v5.3.1
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/golang-migrate/migrate/v4 v4.19.1
 	github.com/google/uuid v1.6.0
-	github.com/mattn/go-sqlite3 v1.14.48
+	github.com/mattn/go-sqlite3 v1.14.49
 	github.com/oapi-codegen/runtime v1.6.0
 	golang.org/x/crypto v0.54.0
 )
