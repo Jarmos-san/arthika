@@ -135,6 +135,11 @@ tasks:
       SERVER_EXEC_PATH: ./server/cmd/server
     cmd: go run "{{ .SERVER_EXEC_PATH }}"
 
+  server:seed:
+    desc: Populate the database with sample data.
+    dir: server
+    cmd: go run cmd/seed/main.go
+
   client:install:
     desc: Install client dependencies
     dir: client
