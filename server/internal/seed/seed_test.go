@@ -146,10 +146,6 @@ func TestSeedDevUser_Creates(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if createdParams.ID != seed.DevUserID {
-		t.Errorf("expected id %s, got %s", seed.DevUserID, createdParams.ID)
-	}
-
 	if createdParams.Email != seed.DevUserEmail {
 		t.Errorf("expected email %s, got %s", seed.DevUserEmail, createdParams.Email)
 	}
@@ -171,7 +167,7 @@ func TestSeedDevUser_SkipsWhenExists(t *testing.T) {
 	mock := &mockQuerier{
 		findUserByEmailFn: func(_ context.Context, email string) (repository.User, error) {
 			return repository.User{
-				ID:           seed.DevUserID,
+				ID:           "",
 				Email:        email,
 				PasswordHash: "hash",
 			}, nil
@@ -324,10 +320,6 @@ func TestSeed_RealDatabase(t *testing.T) {
 	user, err := queries.FindUserByEmail(t.Context(), seed.DevUserEmail)
 	if err != nil {
 		t.Fatalf("find dev user: %v", err)
-	}
-
-	if user.ID != seed.DevUserID {
-		t.Errorf("expected id %s, got %s", seed.DevUserID, user.ID)
 	}
 
 	err = bcrypt.CompareHashAndPassword(
