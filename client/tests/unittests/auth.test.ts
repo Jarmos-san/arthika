@@ -34,22 +34,3 @@ describe("getRedirectPath", () => {
     },
   );
 });
-
-describe("getRedirectPath in development", () => {
-  beforeEach(() => {
-    vi.stubEnv("NODE_ENV", "development");
-  });
-
-  it.each([
-    [true, "/login"],
-    [true, "/dashboard"],
-    [false, "/dashboard"],
-    [false, "/login"],
-  ])(
-    "returns undefined for isAuthenticated=%s on %s",
-    (isAuthenticated, targetPath) => {
-      expect.hasAssertions();
-      expect(getRedirectPath(isAuthenticated, targetPath)).toBeUndefined();
-    },
-  );
-});

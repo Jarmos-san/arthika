@@ -17,10 +17,6 @@ const getRedirectPath = (
   isAuthenticated: boolean,
   targetPath: string,
 ): string | undefined => {
-  if (process.env.NODE_ENV !== "production") {
-    return undefined;
-  }
-
   if (targetPath === "/") {
     return "/dashboard";
   }

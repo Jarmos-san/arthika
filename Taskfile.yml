@@ -130,10 +130,20 @@ tasks:
     cmd: go test ./...
 
   server:run:
-    desc: Start the server on :8000
-    vars:
-      SERVER_EXEC_PATH: ./server/cmd/server
-    cmd: go run "{{ .SERVER_EXEC_PATH }}"
+    desc: Run the development backend-server.
+    summary: |
+      Run the development Go-based backend application server.
+
+      This command prepares the database by populating it with some sample data points
+      which also includes a 'dev user' required for authenticating in the development
+      environment. Post operations in the development environment, the command also
+      removes the SQLite3-based database file.
+    dir: server
+    cmds:
+      - task: migrate:up
+      - defer: rm db/arthika.db
+      - go run cmd/seed/main.go
+      - go run cmd/server/main.go
 
   client:install:
     desc: Install client dependencies

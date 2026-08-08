@@ -32,6 +32,27 @@ go test ./server/...           # run all tests
 task lint                      # run linters (requires golangci-lint v2)
 ```
 
+## Development user
+
+A convenience user is populated by the `seed` executable for local development.
+Apply the migrations first (`task migrate:up` or just start the server, which
+runs migrations automatically), then run the seed:
+
+```bash
+go run ./server/cmd/seed
+```
+
+The seed is idempotent, so it can be re-run safely anytime.
+
+Credentials: `dev@example.com` / `dev-password`
+
+```sh
+curl -i -c /tmp/cookies.txt -X POST http://localhost:8000/api/users/login \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"dev@example.com","password":"dev-password"}'
+curl -b /tmp/cookies.txt http://localhost:8000/api/users/current-user
+```
+
 ## License and Distribution Rights
 
 The project's source code is developed publicly with an open-source license, see

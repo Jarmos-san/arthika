@@ -7,6 +7,7 @@ task setup                      # install all deps (server + client)
 task server:test                # go test ./...
 task server:lint                # golangci-lint v2
 task migrate:up                 # apply pending DB migrations
+go run ./server/cmd/seed        # seed dev user (requires migrated DB; idempotent)
 task oapi:gen                   # regenerate Go stubs + TS types from OpenAPI spec
 go run ./server/cmd/server      # start server on :8000
 cd client && pnpm dev           # Nuxt dev server
@@ -21,9 +22,9 @@ go test ./server/internal/handler/ -run TestRegister_Success
 ## Architecture
 
 - Monorepo: `server/` (Go) + `client/` (Nuxt 4 / Vue 3 / TypeScript)
-- Entrypoint: `server/cmd/server/main.go`
+- Entrypoint: `server/cmd/server/main.go` (dev-data seeding: `server/cmd/seed/main.go`)
 - Layers: **Handler → Repository** (no service package — deliberate MVP choice)
-- Server packages under `server/internal/`: `api/`, `app/`, `auth/`, `config/`, `handler/`, `logger/`, `middleware/`, `repository/`
+- Server packages under `server/internal/`: `api/`, `app/`, `auth/`, `config/`, `handler/`, `logger/`, `middleware/`, `repository/`, `seed/`
 - Client app layout: `client/app/` with `pages/`, `components/`, `composables/`, `stores/`, `utils/`, `middleware/`, `layouts/`, `assets/`, `openapi/`, `types/`
 - API spec: `openapi.yml` (project root) — JSON:API format (`application/vnd.api+json`)
 - Routing: `go-chi/chi/v5` with strict server interface (`oapi-codegen`)
