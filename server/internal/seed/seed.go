@@ -52,13 +52,19 @@ func New(queries repository.Querier, logger *slog.Logger) *Seeder {
 
 // Seed runs all registered seeders in order.
 //
-// Future seeders (e.g., asset classes, demo transactions) should be invoked
-// from this method alongside the existing SeedDevUser call.
+// Future seeders (e.g., demo transactions) should be invoked from this method
+// alongside the existing SeedDevUser and SeedAssetClasses calls.
 func (s *Seeder) Seed(ctx context.Context) error {
 	// Seed the database with a "dev user" for the development environment
 	err := s.SeedDevUser(ctx)
 	if err != nil {
 		return fmt.Errorf("seed dev user: %w", err)
+	}
+
+	// Seed the database with the default asset classes
+	err = s.SeedAssetClasses(ctx)
+	if err != nil {
+		return fmt.Errorf("seed asset classes: %w", err)
 	}
 
 	return nil
@@ -107,6 +113,74 @@ func (s *Seeder) SeedDevUser(ctx context.Context) error {
 
 	// Log the "success" message
 	s.logger.Info("dev user created", "email", DevUserEmail)
+
+	return nil
+}
+
+// SeedAssetClasses creates the default asset classes if they do not already
+// exist.
+//
+// It is idempotent: an existing class is left untouched and logged as skipped.
+func (s *Seeder) SeedAssetClasses(ctx context.Context) error {
+	assetClasses := []struct {
+		name,
+		description string
+	}{
+		{
+			"Equity",
+			"Ownership stakes in companies, e.g. stocks and shares.",
+		},
+		{
+			"Debt Bonds",
+			"Fixed-income securities representing loans to issuers.",
+		},
+		{
+			"Commodities",
+			"Raw materials and primary goods, e.g. gold, oil, wheat.",
+		},
+		{
+			"Mutual Funds",
+			"Pooled investment vehicles managed by professionals.",
+		},
+	}
+
+	for _, assetClass := range assetClasses {
+		// Check if the asset class already exists in the database
+		_, err := s.queries.FindAssetClassByName(
+			ctx,
+			assetClass.name,
+		)
+
+		switch {
+		case err == nil:
+			s.logger.Info(
+				"asset class already exists, skipping",
+				"name",
+				assetClass.name,
+			)
+
+			continue
+		case !errors.Is(err, sql.ErrNoRows):
+			return fmt.Errorf(
+				"check for existing asset class %q: %w",
+				assetClass.name,
+				err,
+			)
+		}
+
+		// Add the asset class to the database
+		err = s.queries.CreateAssetClass(ctx, repository.CreateAssetClassParams{
+			ID:          uuid.NewString(),
+			Name:        assetClass.name,
+			Description: sql.NullString{String: assetClass.description, Valid: true},
+		})
+		if err != nil {
+			return fmt.Errorf("create asset class %q: %w", assetClass.name, err)
+		}
+
+		// Log the "success" message
+		s.logger.Info("asset class created", "name", assetClass.name)
+	}
 
 	return nil
 }
