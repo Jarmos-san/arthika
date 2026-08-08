@@ -34,9 +34,15 @@ task lint                      # run linters (requires golangci-lint v2)
 
 ## Development user
 
-A convenience user is seeded by migration `000004_seed_dev_user` for local
-development. Apply it with `task migrate:up` (or just start the server, which
-runs migrations automatically).
+A convenience user is populated by the `seed` executable for local development.
+Apply the migrations first (`task migrate:up` or just start the server, which
+runs migrations automatically), then run the seed:
+
+```bash
+go run ./server/cmd/seed
+```
+
+The seed is idempotent, so it can be re-run safely anytime.
 
 Credentials: `dev@example.com` / `dev-password`
 
