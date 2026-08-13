@@ -1,4 +1,4 @@
-import type { AssetClass } from "~/types/composables/useAssetClasses";
+import type { AssetClass } from "~/openapi";
 
 /**
  * @description Modal dialog for creating and editing asset classes. The dialog owns the form

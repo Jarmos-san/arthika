@@ -1,14 +1,9 @@
 <script setup lang="ts">
   import { computed, ref, watch } from "vue";
 
-  import useAssetClasses from "~/composables/useAssetClasses";
+  import type { AssetClass } from "~/openapi";
   import type Props from "~/types/components/AssetClassFormDialog";
-  import type {
-    AssetClass,
-    AssetClassInput,
-  } from "~/types/composables/useAssetClasses";
   import type { AssetClassErrors } from "~/types/utils/validators";
-  import { validateAssetClass } from "~/utils/validators";
 
   interface Emits {
     /** @description Fired with the saved asset class after a successful create or update. */
@@ -21,10 +16,8 @@
   const props = defineProps<Props>();
   const emit = defineEmits<Emits>();
 
-  const { createAssetClass, updateAssetClass } = useAssetClasses();
-
   const name = ref("");
-  const description = ref("");
+  const description = ref<string | undefined>("");
   const errors = ref<AssetClassErrors>({ name: undefined });
   const isSubmitting = ref(false);
 
@@ -57,37 +50,6 @@
   const onOpenChange = (open: boolean): void => {
     emit("update:open", open);
   };
-
-  const buildInput = (): AssetClassInput => ({
-    description: description.value.trim(),
-    name: name.value.trim(),
-  });
-
-  const persist = async (
-    input: Readonly<AssetClassInput>,
-  ): Promise<AssetClass> => {
-    if (props.asset !== undefined) {
-      return await updateAssetClass(props.asset.id, input);
-    }
-
-    return await createAssetClass(input);
-  };
-
-  const onSubmit = async (): Promise<void> => {
-    errors.value = validateAssetClass(name.value);
-    if (errors.value.name !== undefined) {
-      return;
-    }
-
-    isSubmitting.value = true;
-    try {
-      const saved = await persist(buildInput());
-      emit("saved", saved);
-      emit("update:open", false);
-    } finally {
-      isSubmitting.value = false;
-    }
-  };
 </script>
 
 <template>
@@ -103,7 +65,7 @@
           {{ dialogTitle }}
         </DialogTitle>
 
-        <form class="mt-5 flex flex-col gap-5" @submit.prevent="onSubmit">
+        <form class="mt-5 flex flex-col gap-5">
           <div>
             <Input
               id="asset-name"

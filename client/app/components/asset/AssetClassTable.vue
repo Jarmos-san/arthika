@@ -1,24 +1,12 @@
 <script setup lang="ts">
-  import type { AssetClass } from "~/types/composables/useAssetClasses";
+  import type { AssetClass } from "~/openapi";
 
   interface Props {
     /** @description Asset classes to render as ledger rows. */
     assetClasses: AssetClass[];
   }
 
-  interface Emits {
-    /** @description Fired when the user clicks the add button in the empty state. */
-    add: [];
-
-    /** @description Fired when the user clicks Delete on a row. */
-    delete: [asset: AssetClass];
-
-    /** @description Fired when the user clicks Edit on a row. */
-    edit: [asset: AssetClass];
-  }
-
   const props = defineProps<Props>();
-  const emit = defineEmits<Emits>();
 </script>
 
 <template>
@@ -56,17 +44,10 @@
             </td>
             <td class="px-6 py-4">
               <div class="flex justify-end gap-1">
-                <button
-                  class="btn-ghost"
-                  type="button"
-                  @click="emit('edit', assetClass)"
-                >
-                  Edit
-                </button>
+                <button class="btn-ghost" type="button"> Edit </button>
                 <button
                   class="btn-ghost text-red-600 hover:text-red-700"
                   type="button"
-                  @click="emit('delete', assetClass)"
                 >
                   Delete
                 </button>
@@ -86,7 +67,7 @@
         <p class="mt-1.5 text-sm text-stone-500">
           Add your first one to start tracking.
         </p>
-        <button class="btn-positive mt-5" type="button" @click="emit('add')">
+        <button class="btn-positive mt-5" type="button">
           Add asset class
         </button>
       </div>
