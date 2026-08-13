@@ -17,7 +17,7 @@
   const emit = defineEmits<Emits>();
 
   const name = ref("");
-  const description = ref("");
+  const description = ref<string | undefined>("");
   const errors = ref<AssetClassErrors>({ name: undefined });
   const isSubmitting = ref(false);
 
