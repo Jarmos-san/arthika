@@ -16,8 +16,9 @@ import (
 	"github.com/Jarmos-san/arthika/server/internal/repository"
 	"github.com/Jarmos-san/arthika/server/internal/seed"
 	migrate "github.com/golang-migrate/migrate/v4"
-	_ "github.com/golang-migrate/migrate/v4/database/sqlite3" // Register SQLite3 driver.
-	_ "github.com/golang-migrate/migrate/v4/source/file"      // Register file source.
+	_ "github.com/golang-migrate/migrate/v4/database/sqlite3"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
+	"github.com/google/uuid"
 	_ "github.com/mattn/go-sqlite3"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -244,6 +245,248 @@ func TestSeedDevUser_ErrorFromCreate(t *testing.T) {
 	seeder := seed.New(mock, slog.Default())
 
 	err := seeder.SeedDevUser(t.Context())
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+
+	if !errors.Is(err, errCreateFailed) {
+		t.Errorf("expected error to wrap %v, got %v", errCreateFailed, err)
+	}
+}
+
+// TestSeedAssetClasses_CreatesAll verifies all default asset classes are
+// created with a valid UUID ID and the expected description when none exist
+// in the database yet.
+func TestSeedAssetClasses_CreatesAll(t *testing.T) {
+	t.Parallel()
+
+	var created []repository.CreateAssetClassParams
+
+	mock := &mockQuerier{
+		findUserByEmailFn: nil,
+		createUserFn:      nil,
+		countUsersFn:      nil,
+		createAssetClassFn: func(_ context.Context, arg repository.CreateAssetClassParams) error {
+			created = append(created, arg)
+
+			return nil
+		},
+		deleteAssetClassFn:   nil,
+		findAssetClassByIDFn: nil,
+		findAssetClassByNameFn: func(_ context.Context, _ string) (repository.AssetClass, error) {
+			return repository.AssetClass{}, sql.ErrNoRows
+		},
+		listAssetClassesFn: nil,
+		updateAssetClassFn: nil,
+	}
+
+	seeder := seed.New(mock, slog.Default())
+
+	err := seeder.SeedAssetClasses(t.Context())
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	assertCreatedAssetClasses(t, created)
+}
+
+// assertCreatedAssetClasses asserts the created params match the default asset
+// classes hard-coded in the seed package, with valid UUID IDs and descriptions.
+func assertCreatedAssetClasses(t *testing.T, created []repository.CreateAssetClassParams) {
+	t.Helper()
+
+	expected := map[string]string{
+		"Equity":       "Ownership stakes in companies, e.g. stocks and shares.",
+		"Debt Bonds":   "Fixed-income securities representing loans to issuers.",
+		"Commodities":  "Raw materials and primary goods, e.g. gold, oil, wheat.",
+		"Mutual Funds": "Pooled investment vehicles managed by professionals.",
+	}
+
+	if len(created) != len(expected) {
+		t.Fatalf(
+			"expected %d created asset classes, got %d",
+			len(expected),
+			len(created),
+		)
+	}
+
+	for _, arg := range created {
+		_, err := uuid.Parse(arg.ID)
+		if err != nil {
+			t.Errorf("expected %q ID to be a valid UUID, got %q", arg.Name, arg.ID)
+		}
+
+		wantDescription, ok := expected[arg.Name]
+		if !ok {
+			t.Errorf("unexpected asset class created: %q", arg.Name)
+
+			continue
+		}
+
+		if !arg.Description.Valid {
+			t.Errorf("expected %q description to be valid", arg.Name)
+
+			continue
+		}
+
+		if arg.Description.String != wantDescription {
+			t.Errorf(
+				"expected %q description to be %q, got %q",
+				arg.Name,
+				wantDescription,
+				arg.Description.String,
+			)
+		}
+	}
+}
+
+// TestSeedAssetClasses_SkipsExisting verifies existing asset classes are left
+// untouched without creating duplicates.
+func TestSeedAssetClasses_SkipsExisting(t *testing.T) {
+	t.Parallel()
+
+	mock := &mockQuerier{
+		findUserByEmailFn:    nil,
+		createUserFn:         nil,
+		countUsersFn:         nil,
+		createAssetClassFn:   nil, // Panics if called; seeding must skip.
+		deleteAssetClassFn:   nil,
+		findAssetClassByIDFn: nil,
+		findAssetClassByNameFn: func(_ context.Context, name string) (repository.AssetClass, error) {
+			return repository.AssetClass{
+				ID:          "existing",
+				Name:        name,
+				Description: sql.NullString{String: "", Valid: false},
+			}, nil
+		},
+		listAssetClassesFn: nil,
+		updateAssetClassFn: nil,
+	}
+
+	seeder := seed.New(mock, slog.Default())
+
+	err := seeder.SeedAssetClasses(t.Context())
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+// TestSeedAssetClasses_MixedExistingAndNew verifies only the missing asset
+// classes are created when some already exist.
+func TestSeedAssetClasses_MixedExistingAndNew(t *testing.T) {
+	t.Parallel()
+
+	existing := map[string]bool{
+		"Equity":      true,
+		"Commodities": true,
+	}
+
+	var created []repository.CreateAssetClassParams
+
+	mock := &mockQuerier{
+		findUserByEmailFn: nil,
+		createUserFn:      nil,
+		countUsersFn:      nil,
+		createAssetClassFn: func(_ context.Context, arg repository.CreateAssetClassParams) error {
+			created = append(created, arg)
+
+			return nil
+		},
+		deleteAssetClassFn:   nil,
+		findAssetClassByIDFn: nil,
+		findAssetClassByNameFn: func(_ context.Context, name string) (repository.AssetClass, error) {
+			if existing[name] {
+				return repository.AssetClass{
+					ID:          "existing",
+					Name:        name,
+					Description: sql.NullString{String: "", Valid: false},
+				}, nil
+			}
+
+			return repository.AssetClass{}, sql.ErrNoRows
+		},
+		listAssetClassesFn: nil,
+		updateAssetClassFn: nil,
+	}
+
+	seeder := seed.New(mock, slog.Default())
+
+	err := seeder.SeedAssetClasses(t.Context())
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if len(created) != 2 {
+		t.Fatalf("expected 2 created asset classes, got %d", len(created))
+	}
+
+	createdNames := make(map[string]bool)
+	for _, arg := range created {
+		createdNames[arg.Name] = true
+	}
+
+	for _, name := range []string{"Debt Bonds", "Mutual Funds"} {
+		if !createdNames[name] {
+			t.Errorf("expected %q to be created", name)
+		}
+	}
+}
+
+// TestSeedAssetClasses_ErrorFromLookup verifies lookup errors besides
+// ErrNoRows are propagated.
+func TestSeedAssetClasses_ErrorFromLookup(t *testing.T) {
+	t.Parallel()
+
+	mock := &mockQuerier{
+		findUserByEmailFn:    nil,
+		createUserFn:         nil,
+		countUsersFn:         nil,
+		createAssetClassFn:   nil, // Panics if called; seeding must not create.
+		deleteAssetClassFn:   nil,
+		findAssetClassByIDFn: nil,
+		findAssetClassByNameFn: func(_ context.Context, _ string) (repository.AssetClass, error) {
+			return repository.AssetClass{}, errLookupUnavailable
+		},
+		listAssetClassesFn: nil,
+		updateAssetClassFn: nil,
+	}
+
+	seeder := seed.New(mock, slog.Default())
+
+	err := seeder.SeedAssetClasses(t.Context())
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+
+	if !errors.Is(err, errLookupUnavailable) {
+		t.Errorf("expected error to wrap %v, got %v", errLookupUnavailable, err)
+	}
+}
+
+// TestSeedAssetClasses_ErrorFromCreate verifies creation failures are
+// propagated.
+func TestSeedAssetClasses_ErrorFromCreate(t *testing.T) {
+	t.Parallel()
+
+	mock := &mockQuerier{
+		findUserByEmailFn: nil,
+		createUserFn:      nil,
+		countUsersFn:      nil,
+		createAssetClassFn: func(_ context.Context, _ repository.CreateAssetClassParams) error {
+			return errCreateFailed
+		},
+		deleteAssetClassFn:   nil,
+		findAssetClassByIDFn: nil,
+		findAssetClassByNameFn: func(_ context.Context, _ string) (repository.AssetClass, error) {
+			return repository.AssetClass{}, sql.ErrNoRows
+		},
+		listAssetClassesFn: nil,
+		updateAssetClassFn: nil,
+	}
+
+	seeder := seed.New(mock, slog.Default())
+
+	err := seeder.SeedAssetClasses(t.Context())
 	if err == nil {
 		t.Fatal("expected error, got nil")
 	}
