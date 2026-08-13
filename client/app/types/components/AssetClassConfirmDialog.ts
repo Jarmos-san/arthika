@@ -1,4 +1,4 @@
-import type { AssetClass } from "~/types/composables/useAssetClasses";
+import type { AssetClass } from "~/openapi";
 
 /**
  * @description Modal dialog confirming the deletion of an asset class. Emits `confirmed`
