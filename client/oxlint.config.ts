@@ -150,7 +150,7 @@ export default defineConfig({
       "error",
       { allowedVariables: ["CI", "GITHUB_ACTIONS", "NODE_ENV"] },
     ],
-
+    "one-var": "off",
     "oxc/no-async-await": "allow",
   },
   settings: {
