@@ -10,7 +10,7 @@
   });
 
   // Fetch the asset class data from the server
-  const { data: assetClasses } = useAssetClasses();
+  const { data: assetClasses, refresh } = useAssetClasses();
 </script>
 
 <template>
@@ -27,7 +27,7 @@
           tracked
         </p>
       </div>
-      <AssetAddForm />
+      <AssetAddForm @saved="refresh" />
     </header>
 
     <!-- Table containing the list of asset classes currently tracked -->

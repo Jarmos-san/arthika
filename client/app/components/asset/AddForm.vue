@@ -1,8 +1,14 @@
 <script setup lang="ts">
   import { ref, reactive } from "vue";
 
-  import type { AssetClassInput } from "~/openapi";
+  import { useToast } from "#imports";
+  import type { AssetClass, AssetClassInput } from "~/openapi";
   import type { AssetClassErrors } from "~/types/utils/validators";
+  import { validateAssetClass } from "~/utils/validators";
+
+  interface Emits {
+    saved: [asset: AssetClass];
+  }
 
   // Initial state of the add asset class form modal set to "not open"
   const isOpen = ref(false);
@@ -15,6 +21,45 @@
 
   // Reactive object of the error values to be shown on the form if validation fails
   const errors = ref<AssetClassErrors>({ name: undefined });
+
+  const isSubmitting = ref(false);
+
+  const emit = defineEmits<Emits>();
+  const toast = useToast();
+
+  const resetForm = (): void => {
+    isOpen.value = false;
+    asset.name = "";
+    asset.description = "";
+    errors.value = {
+      name: undefined,
+    };
+  };
+
+  const onClose = (): void => {
+    resetForm();
+  };
+
+  const onSubmit = async (): Promise<void> => {
+    errors.value = validateAssetClass(asset.name);
+    if (errors.value.name) {
+      return;
+    }
+
+    isSubmitting.value = true;
+
+    try {
+      const created = await $fetch<AssetClass>("/api/assets", {
+        body: { description: asset.description || undefined, name: asset.name },
+        method: "POST",
+      });
+      emit("saved", created);
+      toast.publish(`Created new asset class: ${asset.name}`);
+      resetForm();
+    } finally {
+      isSubmitting.value = false;
+    }
+  };
 </script>
 
 <template>
@@ -66,11 +111,21 @@
           />
         </form>
 
-        <!-- Cancel add asset action -->
         <div class="mt-5 flex justify-end gap-3">
-          <DialogClose as-child>
-            <button class="btn-secondary" type="button">Cancel</button>
-          </DialogClose>
+          <!-- Cancel button -->
+          <button class="btn-secondary" type="button" @click="onClose">
+            Cancel
+          </button>
+
+          <!-- Save button -->
+          <button
+            class="btn-positive"
+            type="submit"
+            :disabled="isSubmitting"
+            @click="onSubmit"
+          >
+            {{ isSubmitting ? "Saving..." : "Save" }}
+          </button>
         </div>
       </DialogContent>
     </DialogPortal>
