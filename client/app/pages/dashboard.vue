@@ -9,6 +9,7 @@
     title: "Dashboard",
   });
 
+  // Fetch the asset class data from the server
   const { data: assetClasses } = useAssetClasses();
 </script>
 
@@ -26,7 +27,7 @@
           tracked
         </p>
       </div>
-      <button class="btn-positive" type="button">Add asset class</button>
+      <AssetAddForm />
     </header>
 
     <!-- Table containing the list of asset classes currently tracked -->
