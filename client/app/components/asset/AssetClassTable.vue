@@ -1,4 +1,8 @@
 <script setup lang="ts">
+  import DeleteIcon from "@iconify-vue/material-symbols/delete";
+  import EditOutlineRoundedIcon from "@iconify-vue/material-symbols/edit-outline-rounded";
+  import { ref } from "vue";
+
   import type { AssetClass } from "~/openapi";
 
   interface Props {
@@ -7,6 +11,9 @@
   }
 
   const props = defineProps<Props>();
+
+  /** @description The list of header elements to render on top of the table. */
+  const headers = ref(["CLASS", "DESCRIPTION", "ACTIONS"]);
 </script>
 
 <template>
@@ -16,43 +23,50 @@
         v-if="props.assetClasses ? props.assetClasses.length > 0 : undefined"
         class="w-full text-sm"
       >
+        <!-- Table header -->
         <thead>
-          <tr class="border-b border-stone-200 text-left">
+          <tr class="border-b border-stone-200 text-center">
             <th
-              class="px-6 py-3.5 font-mono text-xs font-medium tracking-wider text-stone-400 uppercase"
+              v-for="(header, index) in headers"
+              :key="index"
+              class="px-6 py-3.5 font-mono text-xs font-medium tracking-wider text-stone-400"
             >
-              Class
-            </th>
-            <th
-              class="px-6 py-3.5 font-mono text-xs font-medium tracking-wider text-stone-400 uppercase"
-            >
-              Description
-            </th>
-            <th class="px-6 py-3.5">
-              <span class="sr-only">Actions</span>
+              {{ header }}
             </th>
           </tr>
         </thead>
+
+        <!-- Table body -->
         <tbody class="divide-y divide-stone-200">
           <tr
             v-for="assetClass in props.assetClasses"
             :key="assetClass.id"
             class="transition-colors duration-150 hover:bg-stone-50/60"
           >
+            <!-- Name of the class -->
             <td class="px-6 py-4 font-medium text-stone-800">
               {{ assetClass.name }}
             </td>
+
+            <!-- Description of the class -->
             <td class="px-6 py-4 text-stone-500">
               {{ assetClass.description }}
             </td>
-            <td class="px-6 py-4">
-              <div class="flex justify-end gap-1">
-                <button class="btn-ghost" type="button"> Edit </button>
+
+            <!-- Action buttons -->
+            <td class="p-4">
+              <div class="flex justify-center gap-1">
+                <!-- Edit button -->
+                <button class="btn-ghost" type="button">
+                  <EditOutlineRoundedIcon height="1rem" />
+                </button>
+
+                <!-- Delete button -->
                 <button
                   class="btn-ghost text-red-600 hover:text-red-700"
                   type="button"
                 >
-                  Delete
+                  <DeleteIcon height="1rem" />
                 </button>
               </div>
             </td>
