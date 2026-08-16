@@ -32,7 +32,7 @@
 
     <!-- Table containing the list of asset classes currently tracked -->
     <main class="mt-8">
-      <AssetClassTable :asset-classes="assetClasses ?? []" />
+      <AssetClassTable :asset-classes="assetClasses" />
     </main>
   </div>
 </template>

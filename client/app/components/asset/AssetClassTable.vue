@@ -3,7 +3,7 @@
 
   interface Props {
     /** @description Asset classes to render as ledger rows. */
-    assetClasses: AssetClass[];
+    assetClasses: AssetClass[] | undefined;
   }
 
   const props = defineProps<Props>();
@@ -12,7 +12,10 @@
 <template>
   <div class="rounded-xl border border-stone-200/60 bg-white shadow-lg">
     <div class="overflow-x-auto">
-      <table v-if="props.assetClasses.length > 0" class="w-full text-sm">
+      <table
+        v-if="props.assetClasses ? props.assetClasses.length > 0 : undefined"
+        class="w-full text-sm"
+      >
         <thead>
           <tr class="border-b border-stone-200 text-left">
             <th
