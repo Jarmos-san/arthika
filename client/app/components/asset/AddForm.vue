@@ -1,32 +1,34 @@
 <script setup lang="ts">
   import { ref, reactive } from "vue";
 
-  import { useToast } from "#imports";
+  import { useToast, validateAssetClass } from "#imports";
   import type { AssetClass, AssetClassInput } from "~/openapi";
   import type { AssetClassErrors } from "~/types/utils/validators";
-  import { validateAssetClass } from "~/utils/validators";
 
   interface Emits {
+    /** @description Fired with the created asset class after a successful save. */
     saved: [asset: AssetClass];
   }
-
-  // Initial state of the add asset class form modal set to "not open"
-  const isOpen = ref(false);
-
-  // Reactive object containing the asset details
-  const asset = reactive<AssetClassInput>({
-    description: "",
-    name: "",
-  });
-
-  // Reactive object of the error values to be shown on the form if validation fails
-  const errors = ref<AssetClassErrors>({ name: undefined });
-
-  const isSubmitting = ref(false);
 
   const emit = defineEmits<Emits>();
   const toast = useToast();
 
+  /** @description Whether the "Add asset class" button is open. */
+  const isOpen = ref(false);
+
+  /** @description Form fields for the new asset class. */
+  const asset = reactive<AssetClassInput>({
+    description: undefined,
+    name: "",
+  });
+
+  /** @description Per-field validation errors; `undefined` means the field is valid. */
+  const errors = ref<AssetClassErrors>({ name: undefined });
+
+  /** @description True while the create request is in flight; disables the Save button. */
+  const isSubmitting = ref(false);
+
+  /** @description Clears the form fields and validation errors. */
   const resetForm = (): void => {
     isOpen.value = false;
     asset.name = "";
@@ -36,25 +38,36 @@
     };
   };
 
+  /** @description Cancel button handler: closes the dialog and resets the form. */
   const onClose = (): void => {
     resetForm();
   };
 
+  /**
+   * @description Validates the form, creates the asset class via POST /api/assets, emits
+   * `saved` with the created asset, and shows a toast on success. No-op when
+   * validation fails.
+   */
   const onSubmit = async (): Promise<void> => {
+    // Validate the form input values.
     errors.value = validateAssetClass(asset.name);
     if (errors.value.name) {
       return;
     }
 
+    // Disable the save button when the request is in flight.
     isSubmitting.value = true;
 
+    // Attempt to pass the client-side input values to the server for persistence,
+    // create a toast notification and then reset the form before resetting the
+    // submission state
     try {
       const created = await $fetch<AssetClass>("/api/assets", {
         body: { description: asset.description || undefined, name: asset.name },
         method: "POST",
       });
       emit("saved", created);
-      toast.publish(`Created new asset class: ${asset.name}`);
+      toast.publish(`Created new asset class: "${asset.name}"`);
       resetForm();
     } finally {
       isSubmitting.value = false;
@@ -82,7 +95,7 @@
           Add asset class
         </DialogTitle>
 
-        <form action="submit" class="mt-5 flex flex-col gap-5">
+        <form class="mt-5 flex flex-col gap-5" @submit.prevent="onSubmit">
           <div>
             <!-- Asset name -->
             <Input

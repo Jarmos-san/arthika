@@ -27,7 +27,7 @@
           tracked
         </p>
       </div>
-      <AssetAddForm @saved="refresh" />
+      <AssetAddForm @saved="() => refresh()" />
     </header>
 
     <!-- Table containing the list of asset classes currently tracked -->
