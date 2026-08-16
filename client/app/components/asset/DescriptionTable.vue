@@ -1,7 +1,7 @@
 <script setup lang="ts">
   import DeleteIcon from "@iconify-vue/material-symbols/delete";
   import EditOutlineRoundedIcon from "@iconify-vue/material-symbols/edit-outline-rounded";
-  import { ref } from "vue";
+  import { ref, computed } from "vue";
 
   import type { AssetClass } from "~/openapi";
 
@@ -25,11 +25,12 @@
       >
         <!-- Table header -->
         <thead>
-          <tr class="border-b border-stone-200 text-center">
+          <tr class="border-b border-stone-200 text-left">
             <th
               v-for="(header, index) in headers"
               :key="index"
               class="px-6 py-3.5 font-mono text-xs font-medium tracking-wider text-stone-400"
+              :class="{ 'text-right': index === header.length - 1 }"
             >
               {{ header }}
             </th>
@@ -55,7 +56,7 @@
 
             <!-- Action buttons -->
             <td class="p-4">
-              <div class="flex justify-center gap-1">
+              <div class="flex justify-start gap-1">
                 <!-- Edit button -->
                 <button class="btn-ghost" type="button">
                   <EditOutlineRoundedIcon height="1rem" />

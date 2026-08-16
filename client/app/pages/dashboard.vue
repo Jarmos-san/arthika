@@ -1,7 +1,6 @@
 <script setup lang="ts">
   import { useHead } from "nuxt/app";
 
-  import AssetClassTable from "~/components/asset/AssetClassTable.vue";
   import useAssetClasses from "~/composables/useAssetClasses";
 
   // Add a title for the page
@@ -32,7 +31,7 @@
 
     <!-- Table containing the list of asset classes currently tracked -->
     <main class="mt-8">
-      <AssetClassTable :asset-classes="assetClasses" />
+      <AssetDescriptionTable :asset-classes="assetClasses" />
     </main>
   </div>
 </template>
