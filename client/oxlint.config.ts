@@ -130,6 +130,11 @@ export default defineConfig({
     "vue",
   ],
   rules: {
+    "capitalized-comments": [
+      "warn",
+      "always",
+      { ignoreConsecutiveComments: true, ignoreInlineComments: true },
+    ],
     "eslint/sort-imports": "off",
     "import/consistent-type-specifier-style": [
       "warn",
