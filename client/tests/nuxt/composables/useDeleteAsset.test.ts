@@ -41,11 +41,11 @@ describe("composables/useDeleteAsset", () => {
     expect.hasAssertions();
 
     rememberEndpoint(`/api/assets/${assetClass.id}`, {
-      handler: () => null,
+      handler: () => ({}),
       method: "DELETE",
     });
 
-    const onDeleted = vi.fn();
+    const onDeleted = vi.fn<() => void>();
     const { onDeleteConfirmed, pendingDelete, requestDelete } = useDeleteAsset({
       onDeleted,
     });
@@ -69,7 +69,7 @@ describe("composables/useDeleteAsset", () => {
       method: "DELETE",
     });
 
-    const onDeleted = vi.fn();
+    const onDeleted = vi.fn<() => void>();
     const { onDeleteConfirmed } = useDeleteAsset({ onDeleted });
 
     await onDeleteConfirmed(assetClass);
@@ -83,31 +83,22 @@ describe("composables/useDeleteAsset", () => {
   it("guards against double-submits while a delete is in flight", async () => {
     expect.hasAssertions();
 
-    let releaseRequest: (() => void) | undefined;
-    const requestGate = new Promise<void>((resolve) => {
-      releaseRequest = resolve;
-    });
-
-    const handler = vi.fn(async () => {
-      await requestGate;
-      return null;
-    });
+    const handler = vi.fn<() => object>(() => ({}));
 
     rememberEndpoint(`/api/assets/${assetClass.id}`, {
       handler,
       method: "DELETE",
     });
 
-    const onDeleted = vi.fn();
+    const onDeleted = vi.fn<() => void>();
     const { onDeleteConfirmed } = useDeleteAsset({ onDeleted });
 
     const first = onDeleteConfirmed(assetClass);
     const second = onDeleteConfirmed(assetClass);
 
-    releaseRequest?.();
     await Promise.all([first, second]);
 
-    expect(handler).toHaveBeenCalledTimes(1);
-    expect(onDeleted).toHaveBeenCalledTimes(1);
+    expect(handler).toHaveBeenCalledOnce();
+    expect(onDeleted).toHaveBeenCalledOnce();
   });
 });
