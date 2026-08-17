@@ -31,7 +31,10 @@
 
     <!-- Table containing the list of asset classes currently tracked -->
     <main class="mt-8">
-      <AssetDescriptionTable :asset-classes="assetClasses" />
+      <AssetDescriptionTable
+        :asset-classes="assetClasses"
+        @deleted="() => refresh()"
+      />
     </main>
   </div>
 </template>
