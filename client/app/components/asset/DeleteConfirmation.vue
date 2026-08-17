@@ -1,9 +1,14 @@
 <script setup lang="ts">
-  import type Props from "~/types/components/AssetClassConfirmDialog";
+  import type { AssetClass } from "~/openapi";
+
+  interface Props {
+    /** @description The asset class pending deletion, or `undefined` when closed. */
+    asset: AssetClass;
+  }
 
   interface Emits {
     /** @description Fired when the user confirms the deletion. */
-    confirmed: [];
+    confirmed: [asset: AssetClass];
 
     /** @description Fired when the dialog's open state changes. */
     "update:open": [open: boolean];
@@ -12,17 +17,27 @@
   const props = defineProps<Props>();
   const emit = defineEmits<Emits>();
 
+  /**
+   * @description Forwards reka-ui's open-state changes to the parent so it can unmount the
+   * dialog when the user dismisses it.
+   *
+   * @param {boolean} open Whether the dialog is still open.
+   */
   const onOpenChange = (open: boolean): void => {
     emit("update:open", open);
   };
 
+  /**
+   * @description Emits the pending asset class when the user clicks Delete, so the parent
+   * can run the delete request.
+   */
   const onConfirm = (): void => {
-    emit("confirmed");
+    emit("confirmed", props.asset);
   };
 </script>
 
 <template>
-  <AlertDialogRoot :open="props.open" @update:open="onOpenChange">
+  <AlertDialogRoot :open="true" @update:open="onOpenChange">
     <AlertDialogPortal>
       <AlertDialogOverlay class="fixed inset-0 z-50 bg-stone-900/40" />
       <AlertDialogContent
@@ -31,7 +46,7 @@
         <AlertDialogTitle
           class="text-lg font-semibold tracking-tight text-stone-800"
         >
-          Delete {{ props.asset?.name }}?
+          Delete {{ props.asset.name }}?
         </AlertDialogTitle>
         <AlertDialogDescription class="mt-1.5 text-sm text-stone-500">
           This removes the asset class from your tracking. You can't undo this.
