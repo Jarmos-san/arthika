@@ -30,19 +30,19 @@
     "vue-router": "^5.1.0"
   },
   "devDependencies": {
-    "@kubb/core": "4.39.3",
+    "@kubb/core": "5.0.0",
     "@kubb/plugin-ts": "4.39.3",
     "@nuxt/test-utils": "^4.1.0",
     "@vitest/coverage-v8": "^4.1.10",
     "@vue/test-utils": "^2.4.11",
     "happy-dom": "^20.11.2",
-    "kubb": "3.2.3",
+    "kubb": "5.0.0",
     "oxfmt": "^0.63.0",
     "oxlint": "^1.78.0",
     "oxlint-tsgolint": "^7.0.2001",
     "typescript": "^6.0.3",
     "vitest": "^4.1.10",
-    "vue-tsc": "^3.3.9"
+    "vue-tsc": "^3.3.10"
   },
   "packageManager": "pnpm@11.21.0"
 }
