@@ -89,6 +89,7 @@ export default defineConfig({
         "import/consistent-type-specifier-style": "allow",
         "vitest/require-hook": "off",
         "vue/define-props-destructuring": "allow",
+        "vue/max-props": ["error", { maxProps: 3 }],
       },
     },
     {

@@ -1,6 +1,7 @@
 <script setup lang="ts">
   import DeleteIcon from "@iconify-vue/material-symbols/delete";
   import EditOutlineRoundedIcon from "@iconify-vue/material-symbols/edit-outline-rounded";
+  import { ref } from "vue";
 
   import useDeleteAsset from "~/composables/useDeleteAsset";
   import type { AssetClass } from "~/openapi";
@@ -27,6 +28,20 @@
 
   /** @description The list of header elements to render on top of the table. */
   const headers = ["CLASS", "DESCRIPTION", "ACTIONS"];
+
+  const pendingEdit = ref<AssetClass | undefined>(undefined);
+
+  /**
+   * @description Clears the pending edit when the dialog reports it closed.
+   *
+   * @param {boolean} open Boolean flag to denote if the edit form is open or
+   *   not.
+   */
+  const onEditDialogOpenChange = (open: boolean): void => {
+    if (!open) {
+      pendingEdit.value = undefined;
+    }
+  };
 </script>
 
 <template>
@@ -71,7 +86,12 @@
             <td class="p-4">
               <div class="flex justify-start gap-1">
                 <!-- Edit button -->
-                <button class="btn-ghost" type="button">
+                <button
+                  class="btn-ghost"
+                  type="button"
+                  :aria-label="`Edit asset class ${assetClass.name}`"
+                  @click="pendingEdit = assetClass"
+                >
                   <EditOutlineRoundedIcon height="1rem" />
                 </button>
 
@@ -112,6 +132,14 @@
       :asset="pendingDelete"
       @confirmed="onDeleteConfirmed"
       @update:open="onDialogOpenChange"
+    />
+
+    <!-- Edit asset form modal -->
+    <AssetEditForm
+      v-if="pendingEdit"
+      :asset="pendingEdit"
+      :open="true"
+      @update:open="onEditDialogOpenChange"
     />
   </div>
 </template>
